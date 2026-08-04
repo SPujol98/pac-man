@@ -1,0 +1,15 @@
+# Virtual Environment
+.venv
+
+# Python Cache
+__pycache__/
+
+# Type Checking
+.mypy_cache/
+
+# Testing
+.pytest_cache/
+tests/
+
+# Guide
+roadmap.md
