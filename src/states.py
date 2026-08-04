@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Optional
 
 
 class GameState(Enum):
@@ -22,6 +21,6 @@ class Direction(Enum):
     LEFT = (-1, 0)
     RIGHT = (1, 0)
 
-    def __init__(self, dx: int, dy: int):
+    def __init__(self, dx: int, dy: int) -> None:
         self.dx = dx
         self.dy = dy
