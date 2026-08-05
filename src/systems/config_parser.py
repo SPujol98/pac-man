@@ -28,6 +28,10 @@ class LevelConfig(BaseModel):
     @classmethod
     def clamp_dimension(cls, v: Any) -> int:
         """Apply a clamp to the map dimensions (minimum 5)."""
+        if isinstance(v, bool):
+            raise ValueError(
+                f"A Boolean value ({v}) is not allowed for dimensions."
+            )
         try:
             return max(5, int(v))
         except (ValueError, TypeError) as err:
@@ -62,6 +66,8 @@ class GameConfig(BaseModel):
     @classmethod
     def clamp_lives(cls, v: Any) -> int:
         """Apply a clamp to the wires numbered 1 through 10."""
+        if isinstance(v, bool):
+            raise ValueError("A Boolean value is not allowed for 'lives'.")
         return max(1, min(int(v), 10))
 
     @field_validator(
@@ -75,12 +81,16 @@ class GameConfig(BaseModel):
     @classmethod
     def clamp_non_negative(cls, v: Any) -> int:
         """Ensures that numerical values are not negative."""
+        if isinstance(v, bool):
+            raise ValueError("Boolean values are not allowed for numeric fields.")
         return max(0, int(v))
 
     @field_validator("level_max_time", mode="before")
     @classmethod
     def clamp_max_time(cls, v: Any) -> int:
         """Set the clamp time to a value between 10 and 3,600 seconds."""
+        if isinstance(v, bool):
+            raise ValueError("A Boolean value is not allowed for 'level_max_time'.")
         return max(10, min(int(v), 3600))
 
 
@@ -119,6 +129,13 @@ def load_config(filepath: Union[str, Path]) -> Dict[str, Any]:
             f"Invalid JSON format in '{filepath}': {err}"
             ) from err
     except ValidationError as err:
+        error_details = []
+        for e in err.errors():
+            field_path = " -> ".join(str(loc) for loc in e["loc"])
+            msg = e["msg"]
+            error_details.append(f"'{field_path}': {msg}")
+
+        formatted_errors = "; ".join(error_details)
         raise ConfigError(
-            f"Validation error in the configuration: {err}"
+            f"Validation error in the configuration: {formatted_errors}"
             ) from err
