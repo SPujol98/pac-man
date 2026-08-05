@@ -2,26 +2,90 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+)
+
 
 class ConfigError(Exception):
     """Custom exception for configuration errors."""
     pass
 
 
-REQUIRED_KEYS = [
-    "highscore_filename",
-    "level",
-    "lives",
-    "pacgum",
-    "points_per_pacgum",
-    "points_per_super_pacgum",
-    "points_per_ghost",
-    "seed",
-    "level_max_time",
-]
+class LevelConfig(BaseModel):
+    """Individual settings for each level of the game."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    width: int = Field(default=21)
+    height: int = Field(default=21)
+
+    @field_validator("width", "height", mode="before")
+    @classmethod
+    def clamp_dimension(cls, v: Any) -> int:
+        """Apply a clamp to the map dimensions (minimum 5)."""
+        try:
+            return max(5, int(v))
+        except (ValueError, TypeError) as err:
+            raise ValueError(f"Invalid level dimension: {v}") from err
+
+
+class GameConfig(BaseModel):
+    """Main game configuration diagram."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    highscore_filename: str
+    level: List[LevelConfig] = Field(min_length=1)
+    lives: int
+    pacgum: int
+    points_per_pacgum: int
+    points_per_super_pacgum: int
+    points_per_ghost: int
+    seed: int
+    level_max_time: int
+
+    @field_validator("highscore_filename", mode="after")
+    @classmethod
+    def validate_filename(cls, v: str) -> str:
+        """Validate that the highscore filename is not empty."""
+        stripped = v.strip()
+        if not stripped:
+            raise ValueError("'highscore_filename' cannot be empty.")
+        return stripped
+
+    @field_validator("lives", mode="before")
+    @classmethod
+    def clamp_lives(cls, v: Any) -> int:
+        """Apply a clamp to the wires numbered 1 through 10."""
+        return max(1, min(int(v), 10))
+
+    @field_validator(
+        "pacgum",
+        "points_per_pacgum",
+        "points_per_super_pacgum",
+        "points_per_ghost",
+        "seed",
+        mode="before",
+    )
+    @classmethod
+    def clamp_non_negative(cls, v: Any) -> int:
+        """Ensures that numerical values are not negative."""
+        return max(0, int(v))
+
+    @field_validator("level_max_time", mode="before")
+    @classmethod
+    def clamp_max_time(cls, v: Any) -> int:
+        """Set the clamp time to a value between 10 and 3,600 seconds."""
+        return max(10, min(int(v), 3600))
 
 
 def strip_comments(raw_text: str) -> str:
+
     clean_lines: List[str] = []
     for line in raw_text.splitlines():
         stripped = line.strip()
@@ -30,103 +94,8 @@ def strip_comments(raw_text: str) -> str:
     return "\n".join(clean_lines)
 
 
-def _clamp_int(
-    value: Any,
-    min_val: int,
-    max_val: Union[int, None] = None,
-) -> int:
-    """Convert to an integer and limit the value to a safe range."""
-    val = int(value)
-    if max_val is not None:
-        return max(min_val, min(val, max_val))
-    return max(min_val, val)
-
-
-def validate_and_clamp_config(data: Dict[str, Any]) -> Dict[str, Any]:
-    if not isinstance(data, dict):
-        raise ConfigError(
-            "The root element of the JSON must be an object/dictionary."
-            )
-
-    missing = [key for key in REQUIRED_KEYS if key not in data]
-    if missing:
-        raise ConfigError(
-            f"The following required keys are missing "
-            f"from the JSON: {', '.join(missing)}"
-        )
-
-    validated: Dict[str, Any] = {}
-
-    if (
-        not isinstance(data["highscore_filename"], str)
-        or not data["highscore_filename"].strip()
-    ):
-        raise ConfigError("'highscore_filename' must be a non-empty string.")
-    validated["highscore_filename"] = data["highscore_filename"].strip()
-
-    if not isinstance(data["level"], list) or len(data["level"]) == 0:
-        raise ConfigError("'level' must be a non-empty list of levels.")
-
-    validated_levels: List[Dict[str, Any]] = []
-    for idx, lvl in enumerate(data["level"]):
-        if not isinstance(lvl, dict):
-            raise ConfigError(
-                f"The level at position {idx} must be a JSON object."
-                )
-        if "width" not in lvl or "height" not in lvl:
-            raise ConfigError(
-                f"The level at position {idx} must "
-                "include 'width' and 'height'."
-            )
-        try:
-            w = _clamp_int(lvl["width"], min_val=5)
-            h = _clamp_int(lvl["height"], min_val=5)
-        except (ValueError, TypeError) as err:
-            raise ConfigError(
-                f"Invalid dimensions at this level {idx}: {err}"
-            ) from err
-
-        lvl_copy = lvl.copy()
-        lvl_copy["width"] = w
-        lvl_copy["height"] = h
-        validated_levels.append(lvl_copy)
-
-    validated["level"] = validated_levels
-
-    try:
-        validated["lives"] = _clamp_int(data["lives"], min_val=1, max_val=10)
-        validated["pacgum"] = _clamp_int(data["pacgum"], min_val=0)
-        validated["points_per_pacgum"] = _clamp_int(
-            data["points_per_pacgum"],
-            min_val=0,
-        )
-        validated["points_per_super_pacgum"] = _clamp_int(
-            data["points_per_super_pacgum"],
-            min_val=0
-        )
-        validated["points_per_ghost"] = _clamp_int(
-            data["points_per_ghost"],
-            min_val=0
-        )
-        validated["seed"] = _clamp_int(data["seed"], min_val=0)
-        validated["level_max_time"] = _clamp_int(
-            data["level_max_time"],
-            min_val=10,
-            max_val=3600,
-        )
-    except (ValueError, TypeError) as err:
-        raise ConfigError(
-            f"Invalid numeric value in the settings: {err}"
-            ) from err
-
-    for key, value in data.items():
-        if key not in validated:
-            validated[key] = value
-
-    return validated
-
-
 def load_config(filepath: Union[str, Path]) -> Dict[str, Any]:
+
     path = Path(filepath)
     if not path.is_file():
         raise ConfigError(f"Configuration file not found: '{filepath}'")
@@ -142,10 +111,14 @@ def load_config(filepath: Union[str, Path]) -> Dict[str, Any]:
     clean_content = strip_comments(raw_content)
 
     try:
-        data = json.loads(clean_content)
+        raw_json = json.loads(clean_content)
+        config_obj = GameConfig.model_validate(raw_json)
+        return config_obj.model_dump()
     except json.JSONDecodeError as err:
         raise ConfigError(
             f"Invalid JSON format in '{filepath}': {err}"
             ) from err
-
-    return validate_and_clamp_config(data)
+    except ValidationError as err:
+        raise ConfigError(
+            f"Validation error in the configuration: {err}"
+            ) from err
