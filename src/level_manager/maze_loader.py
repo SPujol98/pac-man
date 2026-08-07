@@ -88,7 +88,7 @@ def load_maze(
 
     Sets 'perfect = False' to ensure there are loops in the corridors.
     If the external library fails or cannot be found, it returns a default map.
-        Clamp dimensions: min 5 to prevent indexing errors, max 60 to prevent
+        Clamp dimensions: min 5 to prevent indexing errors, max 45 to prevent
         DFS RecursionError in the external library
     """
     try:
