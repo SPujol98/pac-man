@@ -1,15 +1,18 @@
-"""Adapter for integrating the external 'MazeGenerator' library (A-Maze-ing).
-It translates the maze bitmasks and handles errors cleanly.
-"""
-
 from dataclasses import dataclass
 from typing import List, Tuple
+try:
+    import mazegenerator
+    _MAZEGEN_AVAILABLE = True
+except ImportError as err:
+    print(f"[Warning] The external library could not be imported: {err}. "
+          "Fallback maps will be used.")
+    _MAZEGEN_AVAILABLE = False
 
-# Máscaras de bits extraídas del funcionamiento de MazeGenerator
-WALL_NORTH = 1  # Muro Arriba (dy = -1)
-WALL_EAST = 2   # Muro Derecha (dx = +1)
-WALL_SOUTH = 4  # Muro Abajo (dy = +1)
-WALL_WEST = 8   # Muro Izquierda (dx = -1)
+# Bitmasks extracted from MazeGenerator's internal logic
+WALL_NORTH = 1  # Top Wall (dy = -1)
+WALL_EAST = 2   # Right Wall (dx = +1)
+WALL_SOUTH = 4  # Bottom Wall (dy = +1)
+WALL_WEST = 8   # Left Wall (dx = -1)
 
 
 @dataclass(frozen=True)
@@ -86,21 +89,21 @@ def load_maze(
 
     Sets 'perfect = False' to ensure there are loops in the corridors.
     If the external library fails or cannot be found, it returns a default map.
+        Clamp dimensions: min 5 to prevent indexing errors, max 60 to prevent
+        DFS RecursionError in the external library
     """
     try:
-        safe_w = max(5, int(width))
-        safe_h = max(5, int(height))
+        safe_w = min(max(5, int(width)), 45)
+        safe_h = min(max(5, int(height)), 45)
         safe_seed = int(seed)
     except (ValueError, TypeError):
         print("[Warning] Invalid arguments in load_maze. Using fallback.")
         return _generate_fallback_maze(21, 21)
 
-    try:
-        # Importación dinámica segura: asume que mazegenerator
-        # está en el PYTHONPATH
-        import mazegenerator
+    if not _MAZEGEN_AVAILABLE:
+        return _generate_fallback_maze(safe_w, safe_h)
 
-        # Instanciar forzando PERFECT = False
+    try:
         generator = mazegenerator.MazeGenerator(
             size=(safe_w, safe_h),
             perfect=False,
@@ -110,8 +113,13 @@ def load_maze(
         )
 
         raw_maze = generator.maze
-        if not raw_maze or len(raw_maze) == 0:
-            print("[Warning] MazeGenerator returned an empty array. "
+
+        if (
+            not raw_maze or
+            len(raw_maze) != safe_h or
+            len(raw_maze[0]) != safe_w
+        ):
+            print("[Warning] MazeGenerator returned an invalid/empty grid. "
                   "Using fallback.")
             return _generate_fallback_maze(safe_w, safe_h)
 
