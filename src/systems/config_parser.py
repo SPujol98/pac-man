@@ -186,7 +186,7 @@ def strip_comments(raw_text: str) -> str:
 
 
 def load_config(filepath: Union[str, Path]) -> Dict[str, Any]:
-    """Carga de configuración a prueba de fallos. Nunca lanza excepciones."""
+    """Fail-safe configuration loading. Never throws exceptions."""
     path = Path(filepath)
     raw_json = {}
 
