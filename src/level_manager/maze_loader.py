@@ -130,10 +130,6 @@ def load_maze(
             exit=generator.maze_exit,
         )
 
-    except ImportError as err:
-        print(f"[Warning] The external library could not be imported: "
-              f"{err}. Using fallback.")
-        return _generate_fallback_maze(safe_w, safe_h)
     except Exception as err:
         print(f"[Warning] Internal error in MazeGenerator: {err}. "
               "Using fallback.")
