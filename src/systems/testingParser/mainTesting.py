@@ -8,7 +8,8 @@ from src.systems.config_parser import ConfigError, load_config
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Tester del parser de configuración para Pac-Man (42 Project)."
+        description="Tester del parser de configuración "
+        "para Pac-Man (42 Project)."
     )
     parser.add_argument(
         "config_file",
@@ -16,6 +17,7 @@ def parse_arguments() -> argparse.Namespace:
         default="src/systems/testingParser/example.json",
     )
     return parser.parse_args()
+
 
 def main() -> None:
     args = parse_arguments()
