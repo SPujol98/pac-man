@@ -45,7 +45,7 @@ def draw_maze(maze_gen: MazeGenerator, show_path: bool = False) -> None:
         print("".join(row))
 
 
-maze_gen = MazeGenerator(size=(20, 10), entry_cell=(0, 0),
+maze_gen = MazeGenerator(size=(47, 47), entry_cell=(0, 0),
                          exit_cell=(5, 5), perfect=False, seed=0)
 
 maze_grid = maze_gen.maze
