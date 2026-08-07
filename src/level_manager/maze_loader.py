@@ -8,11 +8,10 @@ except ImportError as err:
           "Fallback maps will be used.")
     _MAZEGEN_AVAILABLE = False
 
-# Bitmasks extracted from MazeGenerator's internal logic
-WALL_NORTH = 1  # Top Wall (dy = -1)
-WALL_EAST = 2   # Right Wall (dx = +1)
-WALL_SOUTH = 4  # Bottom Wall (dy = +1)
-WALL_WEST = 8   # Left Wall (dx = -1)
+WALL_NORTH = 1
+WALL_EAST = 2
+WALL_SOUTH = 4
+WALL_WEST = 8
 
 
 @dataclass(frozen=True)
