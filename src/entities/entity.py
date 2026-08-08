@@ -21,7 +21,7 @@ class Entity(ABC):
         self.sprite_id = sprite_id
 
     @abstractmethod
-    def update(self, dt: float) -> None:
+    def update(self, dt: float, level: "Level") -> None:
         """The entity's state advances by one frame."""
         ...
 
@@ -47,11 +47,11 @@ class MovingEntity(Entity):
         self.direction = direction
 
     @abstractmethod
-    def _choose_direction(self) -> Optional[Direction]:
+    def _choose_direction(self, level: "Level") -> Optional[Direction]:
         """Decide the next direction. Implemented by each subclass."""
         ...
 
-    def update(self, dt: float) -> None:
+    def update(self, dt: float, level: "Level") -> None:
         if self.direction is None:
             return
         target_cell: tuple[int, int] = (self.cell[0] + self.direction.dx,
@@ -64,7 +64,7 @@ class MovingEntity(Entity):
         if frame_progress >= remaining_distance:
             self.px, self.py = target_px, target_py
             self.cell = target_cell
-            self.direction = self._choose_direction()
+            self.direction = self._choose_direction(level)
         else:
             self.px += self.direction.dx * self.speed * dt
             self.py += self.direction.dy * self.speed * dt
@@ -81,6 +81,6 @@ class Collectible(Entity):
         super().__init__(cell, tile_size, sprite_id)
         self.points = points
 
-    def update(self, dt: float) -> None:
+    def update(self, dt: float, level: "Level") -> None:
         """Collectibles are static; nothing to update per frame."""
         pass
