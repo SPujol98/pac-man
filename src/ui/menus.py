@@ -8,7 +8,7 @@ class MainMenu:
         self.width = screen_width
         self.height = screen_height
 
-        self.options: List[str] = ["NUEVA PARTIDA", "SALIR"]
+        self.options: List[str] = ["Start Game", "View Highscores", "Instructions", "Exit"]
         self.selected_index: int = 0
 
         self.title_font = pygame.font.SysFont("emulogic", 48) if "emulogic" in pygame.font.get_fonts() else pygame.font.SysFont("Arial", 48, bold=True)
