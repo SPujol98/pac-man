@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from src.states import Direction
+
+if TYPE_CHECKING:
+    from src.core.level import Level
 
 
 class Entity(ABC):
