@@ -19,27 +19,6 @@ class MainMenu:
         self.COLOR_NORMAL = (255, 255, 255)
         self.COLOR_BG = (0, 0, 0)
 
-    '''
-    def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
-        """Use the arrow keys to navigate the menu.
-        Returns:
-            The new GameState if the user selects an option, or None if no change is made.
-        """
-        if event.type == pygame.KEYDOWN:
-
-            if event.key in (pygame.K_UP, pygame.K_w):
-                self.selected_index = (self.selected_index - 1) % len(self.options)
-            elif event.key in (pygame.K_DOWN, pygame.K_s):
-                self.selected_index = (self.selected_index + 1) % len(self.options)
-
-            elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                if self.selected_index == 0:
-                    return GameState.PLAYING
-                elif self.selected_index == 1:
-                    return None
-
-        return GameState.MENU'''
-
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Use the arrow keys to navigate the menu.
         Returns:
@@ -58,10 +37,10 @@ class MainMenu:
                     return GameState.PLAYING
                 elif selected_option == "View Highscores":
                     print("Sección de Highscores en construcción")
-                    return GameState.MENU 
+                    return GameState.HIGHSCORES
                 elif selected_option == "Instructions":
                     print("Sección de Instrucciones en construcción")
-                    return GameState.MENU
+                    return GameState.INSTRUCTIONS
                 elif selected_option == "Exit":
                     return None
         return GameState.MENU
