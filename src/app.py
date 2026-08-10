@@ -26,7 +26,7 @@ class App:
 
         self.state = GameState.MENU
         self.is_running = True
-    
+
 
         self.maze_data = load_maze(
             width=config.get("maze", {}).get("width", 21),
