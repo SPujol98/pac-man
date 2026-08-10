@@ -1,1 +1,35 @@
+from __future__ import annotations
 from src.entities.entity import MovingEntity
+from src.states import Direction
+from typing import Optional, TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from src.core.level import Level
+
+
+class Player(MovingEntity):
+    """The user-controlled character, moved via buffered directional input.
+
+    Attributes:
+        lives: Remaining lives before game over.
+    """
+    def __init__(self, cell: tuple[int, int], tile_size: int, speed: float,
+                 lives: int) -> None:
+        super().__init__(cell, tile_size, "player", speed)
+        self.lives = lives
+        self._buffered_direction: Optional[Direction] = None
+
+    def set_desired_direction(self, direction: Direction) -> None:
+        self._buffered_direction = direction
+
+    def _choose_direction(self, level: Level) -> Optional[Direction]:
+        if (self._buffered_direction is not None and
+                not level.is_blocked(self.cell, self._buffered_direction)):
+            chosen = self._buffered_direction
+            self._buffered_direction = None
+            return chosen
+        elif (self.direction is not None and
+                not level.is_blocked(self.cell, self.direction)):
+            return self.direction
+        return None
