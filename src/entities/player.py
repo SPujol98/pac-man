@@ -14,9 +14,9 @@ class Player(MovingEntity):
     Attributes:
         lives: Remaining lives before game over.
     """
-    def __init__(self, cell: tuple[int, int], tile_size: int, speed: float,
+    def __init__(self, cell: tuple[int, int], speed: float,
                  lives: int) -> None:
-        super().__init__(cell, tile_size, "player", speed)
+        super().__init__(cell, "player", speed)
         self.lives = lives
         self._buffered_direction: Optional[Direction] = None
 
