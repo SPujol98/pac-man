@@ -143,7 +143,8 @@ class GameConfig(BaseModel):
             "points_per_ghost": 200,
             "seed": 42
         }
-        safe_default = defaults.get(info.field_name, 0)
+        field_name = info.field_name or ""
+        safe_default = defaults.get(field_name, 0)
 
         if isinstance(v, bool):
             print(f"[Warning] Boolean values are not allowed "
