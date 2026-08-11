@@ -1,10 +1,10 @@
 import pygame
 from typing import Optional
-from states import GameState
-from ui.menus.base_screen import BaseScreen
-from ui.renderer import Renderer
-from ui.hud import HUD
-from ui.input_handler import InputHandler
+from src.states import GameState
+from src.ui.menus.base_screen import BaseScreen
+from src.ui.renderer import Renderer
+from src.ui.hud import HUD
+from src.ui.input_handler import InputHandler
 
 
 class PlayScreen(BaseScreen):

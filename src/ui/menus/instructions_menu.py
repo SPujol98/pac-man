@@ -1,7 +1,7 @@
 import pygame
 from typing import Optional, List, Tuple
-from states import GameState
-from ui.menus.base_screen import BaseScreen
+from src.states import GameState
+from src.ui.menus.base_screen import BaseScreen
 
 
 class InstructionsMenu(BaseScreen):

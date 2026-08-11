@@ -1,6 +1,6 @@
 from typing import Optional
 import pygame
-from states import Direction
+from src.states import Direction
 
 
 class InputHandler:

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 import pygame
-from states import GameState
+from src.states import GameState
 
 
 class BaseScreen(ABC):

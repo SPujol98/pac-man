@@ -1,9 +1,9 @@
 import sys
 import pygame
-from states import GameState
-from ui.menus import MainMenu, HighscoresMenu, InstructionsMenu, BaseScreen
-from ui.play_screen import PlayScreen
-from level_manager.maze_loader import load_maze
+from src.states import GameState
+from src.ui.menus import MainMenu, HighscoresMenu, InstructionsMenu, BaseScreen
+from src.ui.play_screen import PlayScreen
+from src.level_manager.maze_loader import load_maze
 
 
 
@@ -30,7 +30,13 @@ class App:
         )
         pygame.display.set_caption("Pac-Man 42")
         self.clock = pygame.time.Clock()
-        self.maze_data = load_maze(...) # CARGA DE DATOS DEL LABERINTO!!
+
+        maze_cfg = config.get("maze", {})
+        width = maze_cfg.get("width", 21)
+        height = maze_cfg.get("height", 21)
+        seed = maze_cfg.get("seed", 42)
+
+        self.maze_data = load_maze(width=width, height=height, seed=seed) # CARGA DE DATOS DEL LABERINTO!!
         self.state = GameState.MENU
         self.is_running = True
 

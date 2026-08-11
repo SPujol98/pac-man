@@ -2,7 +2,8 @@
 UV = uv
 
 # Main files
-MAIN = pac-man.py
+MAIN = src/testingApp.py
+WHEEL = mazegenerator-00001-py3-none-any.whl
 
 # MyPy Flags
 MYPY_FLAGS = --warn-return-any --warn-unused-ignores --ignore-missing-imports \
@@ -19,6 +20,7 @@ all: run
 
 install:
 	$(UV) sync
+	UV_SKIP_WHEEL_FILENAME_CHECK=1 $(UV) pip install $(WHEEL)
 
 run: install
 	$(UV) run python3 $(MAIN)

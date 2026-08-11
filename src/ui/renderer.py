@@ -1,6 +1,6 @@
 import pygame
 from typing import List, Dict, Any
-from states import Direction, GhostState
+from src.states import Direction, GhostState
 
 # OJO! AQUI SE PASARA PARA USAR IMAGENES!, FANTASMAS Y PAC MAN
 class Renderer:
