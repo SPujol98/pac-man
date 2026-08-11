@@ -4,6 +4,7 @@ from src.states import Direction
 
 if TYPE_CHECKING:
     from src.core.level import Level
+    from src.entities.player import Player
 
 
 class Entity(ABC):
@@ -20,7 +21,8 @@ class Entity(ABC):
         self.sprite_id = sprite_id
 
     @abstractmethod
-    def update(self, dt: float, level: "Level") -> None:
+    def update(self, dt: float, level: "Level",
+               player: Optional["Player"] = None) -> None:
         """The entity's state advances by one frame."""
         ...
 
@@ -43,14 +45,16 @@ class MovingEntity(Entity):
         self.progress: float = 0.0
 
     @abstractmethod
-    def _choose_direction(self, level: "Level") -> Optional[Direction]:
+    def _choose_direction(self, level: "Level",
+                          player: Optional["Player"]) -> Optional[Direction]:
         """Decide the next direction. Implemented by each subclass."""
         ...
 
-    def update(self, dt: float, level: "Level") -> None:
+    def update(self, dt: float, level: "Level",
+               player: Optional["Player"] = None) -> None:
         if self.direction is None:
             # Intentamos arrancar si estábamos parados
-            self.direction = self._choose_direction(level)
+            self.direction = self._choose_direction(level, player)
             if self.direction is None:
                 return
 
@@ -63,7 +67,7 @@ class MovingEntity(Entity):
                          self.cell[1] + self.direction.dy)
 
             # Preguntamos hacia dónde ir ahora
-            next_dir = self._choose_direction(level)
+            next_dir = self._choose_direction(level, player)
 
             if next_dir is None:
                 # Si hay un muro, paramos en seco y nos clavamos en la celda
@@ -87,6 +91,7 @@ class Collectible(Entity):
         super().__init__(cell, sprite_id)
         self.points = points
 
-    def update(self, dt: float, level: "Level") -> None:
+    def update(self, dt: float, level: "Level",
+               player: Optional["Player"] = None) -> None:
         """Collectibles are static; nothing to update per frame."""
         pass
