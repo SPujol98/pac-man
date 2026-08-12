@@ -1,24 +1,26 @@
 from pathlib import Path
 from typing import Dict, List, Tuple
 import pygame
+
 from src.states import Direction, GhostState
+from src.entities.player import Player
+from src.entities.ghost import Ghost
+from src.entities.entity import Collectible
 
 
 class Renderer:
-    """Convert the maze matrix and positions into graphics using sprites."""
+    """Render the maze grid, items, Pac-Man, and ghosts."""
 
-    def __init__(self, screen_width: int, screen_height: int, tile_size: int = 24):
+    def __init__(self, screen_width: int, screen_height: int) -> None:
         self.width = screen_width
         self.height = screen_height
-        self.tile_size = tile_size
-
 
         self.COLOR_WALL = (33, 33, 222)
         self.COLOR_PACGUM = (255, 183, 174)
         self.COLOR_SUPER_PACGUM = (255, 255, 255)
         self.COLOR_PACMAN = (255, 255, 0)
 
-        self.GHOST_COLORS = {
+        self.GHOST_COLORS: Dict[str, Tuple[int, int, int]] = {
             "blinky": (255, 0, 0),
             "pinky": (255, 184, 255),
             "inky": (0, 255, 255),
@@ -34,13 +36,12 @@ class Renderer:
         }
 
         self.sprites: Dict[str, pygame.Surface] = {}
-        self._load_sprites()
 
-    def _load_sprites(self) -> None:
-        """Load and resize the PNG files from the assets folder."""
-        assets_dir = Path("assets/images")
-        sprite_files = {
-            "pacman": "pacman.png",
+    def load_sprites_for_tile_size(self, tile_size: int) -> None:
+        """Load and scale the sprites if the cell size changes."""
+        assets_dir = Path("src/assets/images")
+        files = {
+            "player": "pacman.png",
             "blinky": "blinky.png",
             "pinky": "pinky.png",
             "inky": "inky.png",
@@ -48,101 +49,101 @@ class Renderer:
             "frightened": "frightened.png",
         }
 
-        for key, filename in sprite_files.items():
-            file_path = assets_dir / filename
-            if file_path.is_file():
+        for key, filename in files.items():
+            path = assets_dir / filename
+            if path.is_file():
                 try:
-                    img = pygame.image.load(str(file_path)).convert_alpha()
-                    scaled = pygame.transform.scale(img, (self.tile_size, self.tile_size))
-                    self.sprites[key] = scaled
-                except pygame.error as err:
-                    print(f"[Warning] Unable to load {file_path}: {err}")
+                    img = pygame.image.load(str(path)).convert_alpha()
+                    self.sprites[key] = pygame.transform.scale(img, (tile_size, tile_size))
+                except pygame.error:
+                    pass
 
-    def get_offsets(self, cols: int, rows: int) -> Tuple[int, int]:
-        """Calculate the X/Y margin to center the maze while leaving space for the HUD."""
-        maze_w = cols * self.tile_size
-        maze_h = rows * self.tile_size
-        offset_x = (self.width - maze_w) // 2
-        offset_y = ((self.height - maze_h) // 2) + 20
-        return offset_x, offset_y
+    def get_layout(self, cols: int, rows: int) -> Tuple[int, int, int]:
+        """Calculate the ideal cell size and margins to center the map."""
+        tile_size = min(self.width // cols, (self.height - 40) // rows)
+        off_x = (self.width - (cols * tile_size)) // 2
+        off_y = ((self.height - 40 - (rows * tile_size)) // 2) + 40
+        return tile_size, off_x, off_y
 
-    def draw_maze(self, surface: pygame.Surface, maze_grid: List[List[int]]) -> None:
-        """Render the walls and collectibles in the maze."""
-        if not maze_grid or not maze_grid[0]:
-            return
-
-        rows = len(maze_grid)
-        cols = len(maze_grid[0])
-        off_x, off_y = self.get_offsets(cols, rows)
+    def draw_maze(self, surface: pygame.Surface, grid: List[List[int]], tile_size: int, off_x: int, off_y: int) -> None:
+        """Draw the walls of the maze according to the level's grid."""
+        rows = len(grid)
+        cols = len(grid[0]) if rows > 0 else 1
 
         for r in range(rows):
             for c in range(cols):
-                x = off_x + (c * self.tile_size)
-                y = off_y + (r * self.tile_size)
-                cell = maze_grid[r][c]
+                val = grid[r][c]
+                x = off_x + (c * tile_size)
+                y = off_y + (r * tile_size)
 
-                if cell == 1:
-                    rect = pygame.Rect(x, y, self.tile_size, self.tile_size)
-                    pygame.draw.rect(surface, self.COLOR_WALL, rect, width=2, border_radius=4)
+                if val == 15 or val == 1:
+                    pygame.draw.rect(surface, self.COLOR_WALL, (x, y, tile_size, tile_size), width=2, border_radius=3)
+                elif val > 0:
+                    if val & 1:
+                        pygame.draw.line(surface, self.COLOR_WALL, (x, y), (x + tile_size, y), 2)
+                    if val & 2:
+                        pygame.draw.line(surface, self.COLOR_WALL, (x + tile_size, y), (x + tile_size, y + tile_size), 2)
+                    if val & 4:
+                        pygame.draw.line(surface, self.COLOR_WALL, (x, y + tile_size), (x + tile_size, y + tile_size), 2)
+                    if val & 8:
+                        pygame.draw.line(surface, self.COLOR_WALL, (x, y), (x, y + tile_size), 2)
 
-                elif cell == 2:
-                    center = (x + self.tile_size // 2, y + self.tile_size // 2)
-                    pygame.draw.circle(surface, self.COLOR_PACGUM, center, 3)
+    def draw_collectibles(self, surface: pygame.Surface, collectibles: List[Collectible], tile_size: int, off_x: int, off_y: int) -> None:
+        """Draw the Pacgums and Superpacgums."""
+        for item in collectibles:
+            cx, cy = item.cell
+            center_x = off_x + (cx * tile_size) + (tile_size // 2)
+            center_y = off_y + (cy * tile_size) + (tile_size // 2)
 
-                elif cell == 3:
-                    center = (x + self.tile_size // 2, y + self.tile_size // 2)
-                    pygame.draw.circle(surface, self.COLOR_SUPER_PACGUM, center, 7)
+            if item.sprite_id == "superpacgum":
+                pygame.draw.circle(surface, self.COLOR_SUPER_PACGUM, (center_x, center_y), max(4, tile_size // 4))
+            else:
+                pygame.draw.circle(surface, self.COLOR_PACGUM, (center_x, center_y), max(2, tile_size // 8))
 
-    def draw_pacman(
-        self,
-        surface: pygame.Surface,
-        grid_pos: Tuple[int, int],
-        direction: Direction,
-        cols: int,
-        rows: int
-    ) -> None:
-        """Draw Pac-Man facing the current direction."""
-        off_x, off_y = self.get_offsets(cols, rows)
-        x = off_x + (grid_pos[0] * self.tile_size)
-        y = off_y + (grid_pos[1] * self.tile_size)
+    def draw_player(self, surface: pygame.Surface, player: Player, tile_size: int, off_x: int, off_y: int) -> None:
+        """Draw Pac-Man by smoothly interpolating his position using the `progress` function."""
+        px, py = float(player.cell[0]), float(player.cell[1])
+        if player.direction is not None:
+            px += player.direction.dx * player.progress
+            py += player.direction.dy * player.progress
 
-        if "pacman" in self.sprites:
-            angle = self.ROTATIONS.get(direction, 0)
-            rotated_sprite = pygame.transform.rotate(self.sprites["pacman"], angle)
-            surface.blit(rotated_sprite, (x, y))
+        screen_x = int(off_x + (px * tile_size))
+        screen_y = int(off_y + (py * tile_size))
+
+        if "player" in self.sprites:
+            angle = self.ROTATIONS.get(player.direction or Direction.RIGHT, 0)
+            rotated = pygame.transform.rotate(self.sprites["player"], angle)
+            surface.blit(rotated, (screen_x, screen_y))
         else:
-            center = (x + self.tile_size // 2, y + self.tile_size // 2)
-            radius = self.tile_size // 2 - 2
-            pygame.draw.circle(surface, self.COLOR_PACMAN, center, radius)
+            center = (screen_x + tile_size // 2, screen_y + tile_size // 2)
+            pygame.draw.circle(surface, self.COLOR_PACMAN, center, max(4, tile_size // 2 - 2))
 
-    def draw_ghost(
-        self,
-        surface: pygame.Surface,
-        ghost_name: str,
-        grid_pos: Tuple[int, int],
-        state: GhostState,
-        cols: int,
-        rows: int
-    ) -> None:
-        """Draw the ghost using its sprite or the vulnerability sprite."""
-        off_x, off_y = self.get_offsets(cols, rows)
-        x = off_x + (grid_pos[0] * self.tile_size)
-        y = off_y + (grid_pos[1] * self.tile_size)
+    def draw_ghosts(self, surface: pygame.Surface, ghosts: List[Ghost], tile_size: int, off_x: int, off_y: int) -> None:
+        """Draw the ghosts with smooth animation between frames."""
+        for ghost in ghosts:
+            gx, gy = float(ghost.cell[0]), float(ghost.cell[1])
+            if ghost.direction is not None:
+                gx += ghost.direction.dx * ghost.progress
+                gy += ghost.direction.dy * ghost.progress
 
-        sprite_key = "frightened" if state == GhostState.FRIGHTENED else ghost_name.lower()
+            screen_x = int(off_x + (gx * tile_size))
+            screen_y = int(off_y + (gy * tile_size))
 
-        if sprite_key in self.sprites:
-            surface.blit(self.sprites[sprite_key], (x, y))
-        else:
-            color = (
-                self.GHOST_COLORS["frightened"]
-                if state == GhostState.FRIGHTENED
-                else self.GHOST_COLORS.get(ghost_name.lower(), (255, 0, 0))
-            )
-            size = self.tile_size
-            pygame.draw.circle(surface, color, (x + size // 2, y + size // 3), size // 3)
-            pygame.draw.rect(surface, color, (x + 2, y + size // 3, size - 4, size // 2))
+            sprite_key = "frightened" if ghost.state == GhostState.FRIGHTENED else ghost.ghost_type.lower()
 
-            eye_y = y + size // 3
-            pygame.draw.circle(surface, (255, 255, 255), (x + 7, eye_y), 3)
-            pygame.draw.circle(surface, (255, 255, 255), (x + size - 7, eye_y), 3)
+            if sprite_key in self.sprites:
+                surface.blit(self.sprites[sprite_key], (screen_x, screen_y))
+            else:
+                color = (
+                    self.GHOST_COLORS["frightened"]
+                    if ghost.state == GhostState.FRIGHTENED
+                    else self.GHOST_COLORS.get(ghost.ghost_type, (255, 0, 0))
+                )
+                head_center = (screen_x + tile_size // 2, screen_y + tile_size // 3)
+                pygame.draw.circle(surface, color, head_center, tile_size // 3)
+                pygame.draw.rect(surface, color, (screen_x + 2, screen_y + tile_size // 3, tile_size - 4, tile_size // 2))
+
+                eye_y = screen_y + tile_size // 3
+                eye_r = max(1, tile_size // 8)
+                pygame.draw.circle(surface, (255, 255, 255), (screen_x + tile_size // 3, eye_y), eye_r)
+                pygame.draw.circle(surface, (255, 255, 255), (screen_x + 2 * tile_size // 3, eye_y), eye_r)

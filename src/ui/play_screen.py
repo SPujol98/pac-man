@@ -1,231 +1,149 @@
-from typing import Optional, List
+from typing import Optional, Any, List, Tuple
 import pygame
-from src.states import GameState, Direction
+
+from src.states import GameState
 from src.ui.menus.base_screen import BaseScreen
-from src.ui.renderer import Renderer
-from src.ui.hud import HUD
 from src.ui.input_handler import InputHandler
-from src.entities.player import Player
-from src.entities.ghost import Ghost
-
-
-class PlayScreen(BaseScreen):
-    """Gestiona el ciclo de vida del juego cuando el estado es GameState.PLAYING."""
-
-    def __init__(self, screen_width: int, screen_height: int, maze_data: dict):
-        super().__init__(screen_width, screen_height)
-
-        self.maze_data = maze_data
-
-        self.input_handler = InputHandler()
-        self.renderer = Renderer(screen_width, screen_height)
-        self.hud = HUD(screen_width, screen_height)
-
-        self.clock = pygame.time.Clock()
-
-        # Variables globales de la partida
-        self.score: int = 0
-        self.lives: int = 3
-        self.level_num: int = 1
-        self.time_remaining: float = 90.0
-
-        self.player = Player(cell=(1, 1), speed=5.0, lives=self.lives)
-
-
-        self.ghosts: List[Ghost] = [
-            Ghost(
-                cell=(9, 9),
-                ghost_type="blinky",
-                speed=4.5,
-                scatter_corner=(18, 0),
-                house_entrance=(9, 8)
-            ),
-            Ghost(
-                cell=(10, 9),
-                ghost_type="pinky",
-                speed=4.5,
-                scatter_corner=(0, 0),
-                house_entrance=(9, 8)
-            ),
-            Ghost(
-                cell=(9, 10),
-                ghost_type="inky",
-                speed=4.5,
-                scatter_corner=(18, 18),
-                house_entrance=(9, 8)
-            ),
-            Ghost(
-                cell=(10, 10),
-                ghost_type="clyde",
-                speed=4.5,
-                scatter_corner=(0, 18),
-                house_entrance=(9, 8)
-            )
-        ]
-
-    def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
-        """Procesa las entradas durante la partida."""
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_p:
-                return GameState.PAUSED
-
-            requested_dir = self.input_handler.process_event(event)
-            if requested_dir is not None:
-                self.player.set_desired_direction(requested_dir)
-
-        return GameState.PLAYING
-
-    def update(self) -> None:
-        """Actualiza el movimiento y estado de todas las entidades."""
-
-        dt = self.clock.tick(60) / 1000.0
-
-        self.time_remaining = max(0.0, self.time_remaining - dt)
-
-        self.player.update(dt=dt, level=self.maze_data)
-
-        for ghost in self.ghosts:
-            ghost.update(dt=dt, level=self.maze_data, player=self.player)
-
-    def draw(self, surface: pygame.Surface) -> None:
-        """Renderiza el mapa, entidades y HUD."""
-        surface.fill((0, 0, 0))
-
-        grid = self.maze_data.grid
-        rows = len(grid)
-        cols = len(grid[0]) if rows > 0 else 1
-
-        self.renderer.draw_maze(surface, grid)
-
-        player_dir = self.player.direction or Direction.RIGHT
-        self.renderer.draw_pacman(
-            surface=surface,
-            grid_pos=self.player.cell,
-            direction=player_dir,
-            cols=cols,
-            rows=rows
-        )
-
-        for ghost in self.ghosts:
-            self.renderer.draw_ghost(
-                surface=surface,
-                ghost_name=ghost.ghost_type,
-                grid_pos=ghost.cell,
-                state=ghost.state,
-                cols=cols,
-                rows=rows
-            )
-
-        self.hud.draw(
-            surface=surface,
-            score=self.score,
-            lives=self.player.lives,
-            level=self.level_num,
-            time_remaining=int(self.time_remaining)
-        )
-
-"""Pantalla de juego activo (PLAYING) adaptada a la configuración dinámica."""
-'''
-from typing import Optional, List, Any
-import pygame
-from src.states import GameState, Direction
-from src.ui.menus.base_screen import BaseScreen
-from src.ui.renderer import Renderer
 from src.ui.hud import HUD
-from src.ui.input_handler import InputHandler
-from src.entities.player import Player
-from src.entities.ghost import Ghost
+from src.ui.renderer import Renderer
+
+from src.core.game import Game
+from src.core.level import Level
 from src.level_manager.maze_loader import load_maze
 
 
 class PlayScreen(BaseScreen):
-    """Gestiona el ciclo de vida del juego utilizando la configuración de config.json."""
+    """Controla el flujo visual de la partida leyendo la configuración dinámica del JSON."""
 
-    def __init__(self, screen_width: int, screen_height: int, config: dict):
+    def __init__(self, screen_width: int, screen_height: int, config_or_data: Any = None) -> None:
         super().__init__(screen_width, screen_height)
 
-        self.config = config
+        self.clock = pygame.time.Clock()
+        self.current_level_index: int = 0
 
         self.input_handler = InputHandler()
-        self.renderer = Renderer(screen_width, screen_height)
         self.hud = HUD(screen_width, screen_height)
-        self.clock = pygame.time.Clock()
+        self.renderer = Renderer(screen_width, screen_height)
 
-        self.score: int = 0
-        self.lives: int = config.get("lives", 3)
-        self.level_index: int = 0
+        grid, lives, pacgum_pts, superpacgum_pts, time_limit = self._parse_config(config_or_data)
 
-        self.max_time: float = float(config.get("level_max_time", 90))
-        self.time_remaining: float = self.max_time
+        self.level = Level(
+            grid=grid,
+            pacgum_points=pacgum_pts,
+            superpacgum_points=superpacgum_pts,
+            time_left=time_limit
+        )
+        self.game = Game(level=self.level, lives=lives)
 
-        self.maze_data = self._load_current_level_maze()
+        cols = len(grid[0]) if grid else 1
+        rows = len(grid) if grid else 1
+        tile_size, _, _ = self.renderer.get_layout(cols, rows)
+        self.renderer.load_sprites_for_tile_size(tile_size)
 
-        self.player = Player(cell=(1, 1), speed=5.0, lives=self.lives)
+    def _parse_config(self, config_or_data: Any) -> Tuple[List[List[int]], int, int, int, float]:
+        """Extrae vidas, tiempos, puntos y genera el laberinto según la configuración cargada."""
+        lives = 3
+        pacgum_pts = 10
+        superpacgum_pts = 50
+        time_limit = 90.0
+        grid = None
 
-        self.ghosts: List[Ghost] = [
-            Ghost(cell=(9, 9), ghost_type="blinky", speed=4.5, scatter_corner=(18, 0), house_entrance=(9, 8)),
-            Ghost(cell=(10, 9), ghost_type="pinky", speed=4.5, scatter_corner=(0, 0), house_entrance=(9, 8)),
-            Ghost(cell=(9, 10), ghost_type="inky", speed=4.5, scatter_corner=(18, 18), house_entrance=(9, 8)),
-            Ghost(cell=(10, 10), ghost_type="clyde", speed=4.5, scatter_corner=(0, 18), house_entrance=(9, 8))
-        ]
+        if isinstance(config_or_data, dict):
 
-    def _load_current_level_maze(self) -> Any:
-        """Carga el laberinto tomando el ancho y alto correspondientes al nivel actual."""
-        levels_list = self.config.get("level", [{"width": 21, "height": 21}])
+            lives = config_or_data.get("lives", lives)
+            pacgum_pts = config_or_data.get("points_per_pacgum", pacgum_pts)
+            superpacgum_pts = config_or_data.get("points_per_super_pacgum", superpacgum_pts)
+            time_limit = float(config_or_data.get("level_max_time", time_limit))
+            seed = config_or_data.get("seed", 42)
 
-        if self.level_index >= len(levels_list):
-            self.level_index = len(levels_list) - 1
+            if "grid" in config_or_data:
+                grid = config_or_data["grid"]
+            elif "maze_grid" in config_or_data:
+                grid = config_or_data["maze_grid"]
+            else:
+                levels = config_or_data.get("level", [])
+                if levels and self.current_level_index < len(levels):
+                    lvl_cfg = levels[self.current_level_index]
+                    w = int(lvl_cfg.get("width", 21))
+                    h = int(lvl_cfg.get("height", 21))
+                else:
+                    maze_cfg = config_or_data.get("maze", {})
+                    w = int(maze_cfg.get("width", 21))
+                    h = int(maze_cfg.get("height", 21))
 
-        current_level_cfg = levels_list[self.level_index]
+                try:
+                    maze_data = load_maze(width=w, height=h, seed=seed)
+                    grid = maze_data.grid
+                except Exception as err:
+                    print(f"[Warning] No se pudo generar el laberinto con load_maze: {err}")
+                    grid = None
 
-        width = int(current_level_cfg.get("width", 21))
-        height = int(current_level_cfg.get("height", 21))
-        seed = int(self.config.get("seed", 42))
+        elif hasattr(config_or_data, "grid"):
+            grid = config_or_data.grid
+            if hasattr(config_or_data, "lives"):
+                lives = getattr(config_or_data, "lives")
 
-        return load_maze(width=width, height=height, seed=seed)
+        if grid is None:
+            grid = self._get_default_grid()
+
+        return grid, lives, pacgum_pts, superpacgum_pts, time_limit
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
-        """Procesa entradas durante la partida."""
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_p:
-                return GameState.PAUSED
+        """Maneja pausa y controles del jugador."""
+        if event.type == pygame.KEYDOWN and event.key in (pygame.K_p, pygame.K_ESCAPE):
+            return GameState.PAUSED
 
-            requested_dir = self.input_handler.process_event(event)
-            if requested_dir is not None:
-                self.player.set_desired_direction(requested_dir)
+        requested_dir = self.input_handler.process_event(event)
+        if requested_dir is not None:
+            self.game.player.set_desired_direction(requested_dir)
 
         return GameState.PLAYING
 
-    def update(self) -> None:
-        """Actualiza la lógica y el temporizador basado en config."""
+    def update(self) -> Optional[GameState]:
+        """Actualiza la física y revisa fin de juego."""
         dt = self.clock.tick(60) / 1000.0
 
-        self.time_remaining = max(0.0, self.time_remaining - dt)
+        self.game._update(dt)
 
-        self.player.update(dt=dt, level=self.maze_data)
-        for ghost in self.ghosts:
-            ghost.update(dt=dt, level=self.maze_data, player=self.player)
+        if not self.game.is_running:
+            if self.game.lives <= 0 or self.game.level.time_left <= 0:
+                return GameState.GAME_OVER
+            elif self.game.level.is_completed():
+                return GameState.VICTORY
+
+        return GameState.PLAYING
 
     def draw(self, surface: pygame.Surface) -> None:
-        """Renderiza elementos y pasa los valores dinámicos al HUD."""
+        """Delegación completa del pintado a Renderer y HUD."""
         surface.fill((0, 0, 0))
 
-        grid = self.maze_data.grid
+        grid = self.game.level.grid
         rows = len(grid)
         cols = len(grid[0]) if rows > 0 else 1
 
-        self.renderer.draw_maze(surface, grid)
+        tile_size, off_x, off_y = self.renderer.get_layout(cols, rows)
 
-        player_dir = self.player.direction or Direction.RIGHT
-        self.renderer.draw_pacman(surface, self.player.cell, player_dir, cols, rows)
+        self.renderer.draw_maze(surface, grid, tile_size, off_x, off_y)
+        self.renderer.draw_collectibles(surface, self.game.level.collectibles, tile_size, off_x, off_y)
+        self.renderer.draw_player(surface, self.game.player, tile_size, off_x, off_y)
+        self.renderer.draw_ghosts(surface, self.game.ghosts, tile_size, off_x, off_y)
 
-        for ghost in self.ghosts:
-            self.renderer.draw_ghost(surface, ghost.ghost_type, ghost.cell, ghost.state, cols, rows)
 
         self.hud.draw(
             surface=surface,
-            score=self.score,
-            lives=self.player.lives,
-            level=self.level_index + 1,
-            time_remaining=int(self.time_remaining)
-        )'''
+            score=self.game.score,
+            lives=self.game.lives,
+            level=self.current_level_index + 1,
+            time_remaining=int(self.game.level.time_left)
+        )
+
+    def _get_default_grid(self) -> List[List[int]]:
+        """Cuadrícula de seguridad en caso de fallo."""
+        return [
+            [15] * 19,
+            [15] + [0] * 17 + [15],
+            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15, 0, 15, 15, 0, 15],
+            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15, 0, 15, 15, 0, 15],
+            [15] + [0] * 17 + [15],
+            [15] * 19,
+        ]
