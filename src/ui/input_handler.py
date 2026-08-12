@@ -19,7 +19,8 @@ class InputHandler:
         }
 
     def process_event(self, event: pygame.event.Event) -> Optional[Direction]:
-        """Converts a KEYDOWN event into a Direction object for the entities."""
+        """Converts a KEYDOWN event into a Direction
+        object for the entities."""
         if event.type == pygame.KEYDOWN:
             return self.key_map.get(event.key)
         return None

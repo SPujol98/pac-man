@@ -6,7 +6,6 @@ from src.ui.play_screen import PlayScreen
 from src.level_manager.maze_loader import load_maze
 
 
-
 class App:
     def __init__(self, config: dict):
         pygame.init()

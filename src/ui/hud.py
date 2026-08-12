@@ -2,13 +2,12 @@ import pygame
 
 
 class HUD:
-    """Displays the score, lives, level, and time remaining while maintaining the arcade-style look."""
+    """Displays the score, lives, level, and time remaining
+    while maintaining the arcade-style look."""
 
     def __init__(self, screen_width: int, screen_height: int) -> None:
         self.width = screen_width
         self.height = screen_height
-
-
         self.hud_height = 45
 
         has_emulogic = "emulogic" in pygame.font.get_fonts()
@@ -29,8 +28,10 @@ class HUD:
         self.COLOR_LEVEL = (255, 183, 255)
         self.COLOR_PACMAN = (255, 255, 0)
 
-    def _draw_life_icon(self, surface: pygame.Surface, x: int, y: int, radius: int = 7) -> None:
-        """Draw a procedural Pac-Man icon with its mouth open to represent the lives."""
+    def _draw_life_icon(self, surface: pygame.Surface, x: int,
+                        y: int, radius: int = 7) -> None:
+        """Draw a procedural Pac-Man icon with its mouth
+        open to represent the lives."""
         pygame.draw.circle(surface, self.COLOR_PACMAN, (x, y), radius)
 
         mouth_pts = [
@@ -65,23 +66,27 @@ class HUD:
 
         x_score = padding_x
         lbl_score = self.font_label.render("SCORE", True, self.COLOR_LABEL)
-        val_score = self.font_value.render(f"{score:05d}", True, self.COLOR_SCORE)
+        val_score = self.font_value.render(f"{score:05d}",
+                                           True, self.COLOR_SCORE)
 
         surface.blit(lbl_score, (x_score, 4))
         surface.blit(val_score, (x_score, 18))
 
         x_time = padding_x + section_w
-        time_color = self.COLOR_TIME_WARN if time_remaining <= 10 else self.COLOR_TIME_NORMAL
+        time_color = (self.COLOR_TIME_WARN if time_remaining <= 10
+                      else self.COLOR_TIME_NORMAL)
 
         lbl_time = self.font_label.render("TIME", True, self.COLOR_LABEL)
-        val_time = self.font_value.render(f"{max(0, time_remaining):02d}s", True, time_color)
+        val_time = self.font_value.render(f"{max(0, time_remaining):02d}s",
+                                          True, time_color)
 
         surface.blit(lbl_time, (x_time, 4))
         surface.blit(val_time, (x_time, 18))
 
         x_level = padding_x + (section_w * 2)
         lbl_level = self.font_label.render("LEVEL", True, self.COLOR_LABEL)
-        val_level = self.font_value.render(f"{level:02d}", True, self.COLOR_LEVEL)
+        val_level = self.font_value.render(f"{level:02d}",
+                                           True, self.COLOR_LEVEL)
 
         surface.blit(lbl_level, (x_level, 4))
         surface.blit(val_level, (x_level, 18))
