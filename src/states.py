@@ -7,6 +7,8 @@ class GameState(Enum):
     PAUSED = "paused"
     GAME_OVER = "game_over"
     WIN = "win"
+    HIGHSCORES = "highscores"
+    INSTRUCTIONS = "instructions"
 
 
 class GhostState(Enum):
