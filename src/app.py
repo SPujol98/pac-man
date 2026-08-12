@@ -48,7 +48,7 @@ class App:
                                                  self.VIRTUAL_HEIGHT),
             GameState.PLAYING: PlayScreen(self.VIRTUAL_WIDTH,
                                           self.VIRTUAL_HEIGHT,
-                                          self.maze_data),
+                                          self.config),
         }
 
     def run(self) -> None:
