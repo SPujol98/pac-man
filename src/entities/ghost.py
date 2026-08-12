@@ -19,13 +19,12 @@ class Ghost(MovingEntity):
     """
     def __init__(self, cell: tuple[int, int], ghost_type: str, speed: float,
                  scatter_corner: tuple[int, int],
-                 house_entrance: tuple[int, int],
                  direction: Optional[Direction] = None):
         super().__init__(cell, ghost_type, speed, direction)
         self.ghost_type = ghost_type
         self.state: GhostState = GhostState.SCATTER
         self.scatter_corner = scatter_corner
-        self.house_entrance = house_entrance
+        self.spawn_pos = cell
 
     def _choose_direction(
             self, level: Level,
@@ -48,9 +47,8 @@ class Ghost(MovingEntity):
                     self.direction.opposite() if self.direction
                     else Direction.RIGHT
                 )
-
             case GhostState.EATEN:
-                return self._get_best_turn(level, self.house_entrance)
+                return self._get_best_turn(level, self.spawn_pos)
         return None
 
     def _get_best_turn(self, level: Level,
