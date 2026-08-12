@@ -48,7 +48,6 @@ class Ghost(MovingEntity):
                     self.direction.opposite() if self.direction
                     else Direction.RIGHT
                 )
-
             case GhostState.EATEN:
                 return self._get_best_turn(level, self.house_entrance)
         return None

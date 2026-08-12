@@ -36,6 +36,7 @@ class PlayScreen(BaseScreen):
     def update(self) -> None:
         """Updates the positions and logic of the game entities."""
         # TODO: Aquí llamaremos a la lógica de movimiento de Pac-Man y los fantasmas
+        
         pass
 
     def draw(self, surface: pygame.Surface) -> None:

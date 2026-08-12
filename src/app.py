@@ -36,7 +36,7 @@ class App:
         height = maze_cfg.get("height", 21)
         seed = maze_cfg.get("seed", 42)
 
-        self.maze_data = load_maze(width=width, height=height, seed=seed) # CARGA DE DATOS DEL LABERINTO!!
+        self.maze_data = load_maze(width=width, height=height, seed=seed)
         self.state = GameState.MENU
         self.is_running = True
 
