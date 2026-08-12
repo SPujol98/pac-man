@@ -14,16 +14,18 @@ class Player(MovingEntity):
     Attributes:
         lives: Remaining lives before game over.
     """
-    def __init__(self, cell: tuple[int, int], tile_size: int, speed: float,
+    def __init__(self, cell: tuple[int, int], speed: float,
                  lives: int) -> None:
-        super().__init__(cell, tile_size, "player", speed)
+        super().__init__(cell, "player", speed)
         self.lives = lives
         self._buffered_direction: Optional[Direction] = None
 
     def set_desired_direction(self, direction: Direction) -> None:
         self._buffered_direction = direction
 
-    def _choose_direction(self, level: Level) -> Optional[Direction]:
+    def _choose_direction(
+            self, level: Level,
+            player: Optional["Player"] = None) -> Optional[Direction]:
         if (self._buffered_direction is not None and
                 not level.is_blocked(self.cell, self._buffered_direction)):
             chosen = self._buffered_direction
