@@ -1,5 +1,6 @@
 import sys
 import pygame
+from typing import Any
 from src.states import GameState
 from src.ui.menus import MainMenu, HighscoresMenu, InstructionsMenu, BaseScreen
 from src.ui.play_screen import PlayScreen
@@ -7,7 +8,7 @@ from src.level_manager.maze_loader import load_maze
 
 
 class App:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict[str, Any]):
         pygame.init()
         pygame.font.init()
         self.config = config
