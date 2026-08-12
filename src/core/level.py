@@ -16,9 +16,8 @@ class Level:
         Direction.LEFT: 8
     }
 
-    def __init__(self, grid: list[list[int]], tile_size: int) -> None:
+    def __init__(self, grid: list[list[int]]) -> None:
         self.grid = grid
-        self.tile_size = tile_size
         ...
 
     def is_blocked(self, cell: tuple[int, int], direction: Direction) -> bool:

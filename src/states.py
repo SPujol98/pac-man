@@ -10,6 +10,7 @@ class GameState(Enum):
 
 
 class GhostState(Enum):
+    SCATTER = "scatter"
     CHASE = "chase"
     FRIGHTENED = "frightened"
     EATEN = "eaten"
@@ -24,3 +25,18 @@ class Direction(Enum):
     def __init__(self, dx: int, dy: int) -> None:
         self.dx = dx
         self.dy = dy
+
+    def opposite(self) -> "Direction":
+        """Returns the opposite direction to prevent
+        ghosts from turning back."""
+        match self:
+            case Direction.UP:
+                return Direction.DOWN
+            case Direction.DOWN:
+                return Direction.UP
+            case Direction.LEFT:
+                return Direction.RIGHT
+            case Direction.RIGHT:
+                return Direction.LEFT
+            case _:
+                raise ValueError(f"Unknown direction: {self}")

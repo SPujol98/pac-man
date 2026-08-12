@@ -4,6 +4,7 @@ from src.states import Direction
 
 if TYPE_CHECKING:
     from src.core.level import Level
+    from src.entities.player import Player
 
 
 class Entity(ABC):
@@ -12,26 +13,18 @@ class Entity(ABC):
     Subclasses must implement `update` to define per-frame behavior.
 
     Attributes:
-        cell: Grid position (column, row)
-        px/py: Horizontal/vertical pixel for rendering.
+        cell: Grid position (column, row).
         sprite_id: Identifier of the sprite to render.
     """
-    def __init__(self, cell: tuple[int, int], tile_size: int,
-                 sprite_id: str) -> None:
+    def __init__(self, cell: tuple[int, int], sprite_id: str) -> None:
         self.cell = cell
-        self.tile_size = tile_size
-        self.px, self.py = self._cell_to_pixels(cell)
         self.sprite_id = sprite_id
 
     @abstractmethod
-    def update(self, dt: float, level: "Level") -> None:
+    def update(self, dt: float, level: "Level",
+               player: Optional["Player"] = None) -> None:
         """The entity's state advances by one frame."""
         ...
-
-    def _cell_to_pixels(self, cell: tuple[int, int]) -> tuple[float, float]:
-        px: float = cell[0] * self.tile_size
-        py: float = cell[1] * self.tile_size
-        return px, py
 
 
 class MovingEntity(Entity):
@@ -40,37 +33,51 @@ class MovingEntity(Entity):
     Subclasses must implement _choose_direction to decide movement.
 
     Attributes:
-        speed: Movement speed in pixels per second.
+        speed: Movement speed in grid cells per second.
         direction: Current facing direction, or None if not moving yet.
+        progress: Float from 0.0 to 1.0 representing distance to next cell.
     """
-    def __init__(self, cell: tuple[int, int], tile_size: int, sprite_id: str,
+    def __init__(self, cell: tuple[int, int], sprite_id: str,
                  speed: float, direction: Optional[Direction] = None) -> None:
-        super().__init__(cell, tile_size, sprite_id)
+        super().__init__(cell, sprite_id)
         self.speed = speed
         self.direction = direction
+        self.progress: float = 0.0
 
     @abstractmethod
-    def _choose_direction(self, level: "Level") -> Optional[Direction]:
+    def _choose_direction(self, level: "Level",
+                          player: Optional["Player"]) -> Optional[Direction]:
         """Decide the next direction. Implemented by each subclass."""
         ...
 
-    def update(self, dt: float, level: "Level") -> None:
+    def update(self, dt: float, level: "Level",
+               player: Optional["Player"] = None) -> None:
         if self.direction is None:
-            return
-        target_cell: tuple[int, int] = (self.cell[0] + self.direction.dx,
-                                        self.cell[1] + self.direction.dy)
-        target_px, target_py = self._cell_to_pixels(target_cell)
-        remaining_px = abs(target_px - self.px)
-        remaining_py = abs(target_py - self.py)
-        remaining_distance = remaining_px + remaining_py
-        frame_progress = self.speed * dt
-        if frame_progress >= remaining_distance:
-            self.px, self.py = target_px, target_py
-            self.cell = target_cell
-            self.direction = self._choose_direction(level)
-        else:
-            self.px += self.direction.dx * self.speed * dt
-            self.py += self.direction.dy * self.speed * dt
+            # Intentamos arrancar si estábamos parados
+            self.direction = self._choose_direction(level, player)
+            if self.direction is None:
+                return
+
+        # Avanzamos un porcentaje de la celda basado en la velocidad y el tiemp
+        self.progress += self.speed * dt
+
+        # Si llegamos a 1.0, hemos cruzado al centro de la siguiente celda
+        if self.progress >= 1.0:
+            self.cell = (self.cell[0] + self.direction.dx,
+                         self.cell[1] + self.direction.dy)
+
+            # Preguntamos hacia dónde ir ahora
+            next_dir = self._choose_direction(level, player)
+
+            if next_dir is None:
+                # Si hay un muro, paramos en seco y nos clavamos en la celda
+                self.direction = None
+                self.progress = 0.0
+            else:
+                # Si podemos seguir, guardamos la nueva dirección y
+                # conservamos el exceso de progreso para no perder fluidez
+                self.direction = next_dir
+                self.progress -= 1.0
 
 
 class Collectible(Entity):
@@ -79,11 +86,12 @@ class Collectible(Entity):
     Attributes:
         points: Score value awarded when eaten.
     """
-    def __init__(self, cell: tuple[int, int], tile_size: int,
-                 sprite_id: str, points: int) -> None:
-        super().__init__(cell, tile_size, sprite_id)
+    def __init__(self, cell: tuple[int, int], sprite_id: str,
+                 points: int) -> None:
+        super().__init__(cell, sprite_id)
         self.points = points
 
-    def update(self, dt: float, level: "Level") -> None:
+    def update(self, dt: float, level: "Level",
+               player: Optional["Player"] = None) -> None:
         """Collectibles are static; nothing to update per frame."""
         pass
