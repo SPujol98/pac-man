@@ -30,8 +30,10 @@ class Level:
     def __init__(self, grid: list[list[int]],
                  pacgum_points: int,
                  superpacgum_points: int,
+                 ghost_points: int,
                  time_left: float = 90.0) -> None:
         self.grid = grid
+        self.ghost_points = ghost_points
         self.time_left = time_left
         self.collectibles: list[Collectible] = []
         self.player_spawn: tuple[int, int] = (0, 0)

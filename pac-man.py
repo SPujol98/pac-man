@@ -5,7 +5,7 @@ from src.systems.config_parser import load_config
 
 
 def main() -> None:
-    
+
     parser = argparse.ArgumentParser(description="pacman")
 
     parser.add_argument('config_path',
@@ -29,6 +29,7 @@ def main() -> None:
         print("\n[Info] Game interrupted by user (Ctrl+C). "
               "Exiting gracefully...")
         _safe_pygame_quit()
+
 
 def _safe_pygame_quit() -> None:
     """Safely close Pygame contexts if initialized."""
