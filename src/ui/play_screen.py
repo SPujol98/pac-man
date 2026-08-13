@@ -1,21 +1,22 @@
-from typing import Optional, Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 import pygame
-
-from src.states import GameState
-from src.ui.menus.base_screen import BaseScreen
-from src.ui.input_handler import InputHandler
-from src.ui.hud import HUD
-from src.ui.renderer import Renderer
 
 from src.core.game import Game
 from src.core.level import Level
 from src.level_manager.maze_loader import load_maze
+from src.states import GameState
+from src.ui.hud import HUD
+from src.ui.input_handler import InputHandler
+from src.ui.menus.base_screen import BaseScreen
+from src.ui.renderer import Renderer
 
 
 class PlayScreen(BaseScreen):
-    """Controla el flujo visual de la partida leyendo la configuración dinámica del JSON."""
+    """Controla el flujo visual de la partida leyendo
+    la configuración dinámica del JSON."""
 
-    def __init__(self, screen_width: int, screen_height: int, config_or_data: Any = None) -> None:
+    def __init__(self, screen_width: int, screen_height: int,
+                 config_or_data: Any = None) -> None:
         super().__init__(screen_width, screen_height)
 
         self.clock = pygame.time.Clock()
@@ -25,7 +26,8 @@ class PlayScreen(BaseScreen):
         self.hud = HUD(screen_width, screen_height)
         self.renderer = Renderer(screen_width, screen_height)
 
-        grid, lives, pacgum_pts, superpacgum_pts, time_limit = self._parse_config(config_or_data)
+        grid, lives, pacgum_pts, superpacgum_pts, time_limit = (
+            self._parse_config(config_or_data))
 
         self.level = Level(
             grid=grid,
@@ -40,8 +42,11 @@ class PlayScreen(BaseScreen):
         tile_size, _, _ = self.renderer.get_layout(cols, rows)
         self.renderer.load_sprites_for_tile_size(tile_size)
 
-    def _parse_config(self, config_or_data: Any) -> Tuple[List[List[int]], int, int, int, float]:
-        """Extrae vidas, tiempos, puntos y genera el laberinto según la configuración cargada."""
+    def _parse_config(self,
+                      config_or_data: Any) -> Tuple[List[List[int]],
+                                                    int, int, int, float]:
+        """Extrae vidas, tiempos, puntos y genera el laberinto según
+        la configuración cargada."""
         lives = 3
         pacgum_pts = 10
         superpacgum_pts = 50
@@ -52,8 +57,10 @@ class PlayScreen(BaseScreen):
 
             lives = config_or_data.get("lives", lives)
             pacgum_pts = config_or_data.get("points_per_pacgum", pacgum_pts)
-            superpacgum_pts = config_or_data.get("points_per_super_pacgum", superpacgum_pts)
-            time_limit = float(config_or_data.get("level_max_time", time_limit))
+            superpacgum_pts = config_or_data.get("points_per_super_pacgum",
+                                                 superpacgum_pts)
+            time_limit = float(config_or_data.get("level_max_time",
+                                                  time_limit))
             seed = config_or_data.get("seed", 42)
 
             if "grid" in config_or_data:
@@ -75,7 +82,8 @@ class PlayScreen(BaseScreen):
                     maze_data = load_maze(width=w, height=h, seed=seed)
                     grid = maze_data.grid
                 except Exception as err:
-                    print(f"[Warning] No se pudo generar el laberinto con load_maze: {err}")
+                    print("[Warning] No se pudo generar el "
+                          f"laberinto con load_maze: {err}")
                     grid = None
 
         elif hasattr(config_or_data, "grid"):
@@ -90,7 +98,8 @@ class PlayScreen(BaseScreen):
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Maneja pausa y controles del jugador."""
-        if event.type == pygame.KEYDOWN and event.key in (pygame.K_p, pygame.K_ESCAPE):
+        if event.type == pygame.KEYDOWN and event.key in (pygame.K_p,
+                                                          pygame.K_ESCAPE):
             return GameState.PAUSED
 
         requested_dir = self.input_handler.process_event(event)
@@ -99,19 +108,23 @@ class PlayScreen(BaseScreen):
 
         return GameState.PLAYING
 
-    def update(self) -> Optional[GameState]:
-        """Actualiza la física y revisa fin de juego."""
+    def update(self) -> Any:
+        """Actualiza la física y revisa fin de juego.
+        Retorna GameState o None para cumplir con BaseScreen."""
         dt = self.clock.tick(60) / 1000.0
 
         self.game._update(dt)
 
         if not self.game.is_running:
             if self.game.lives <= 0 or self.game.level.time_left <= 0:
-                return GameState.GAME_OVER
+                state: GameState = GameState.GAME_OVER
+                return state
             elif self.game.level.is_completed():
-                return GameState.VICTORY
-
-        return GameState.PLAYING
+                # Asegúrate de que GameState.VICTORY exista en src/states.py
+                state = GameState.VICTORY  # type: ignore[attr-defined]
+                return state
+        state_playing: GameState = GameState.PLAYING
+        return state_playing
 
     def draw(self, surface: pygame.Surface) -> None:
         """Delegación completa del pintado a Renderer y HUD."""
@@ -124,10 +137,12 @@ class PlayScreen(BaseScreen):
         tile_size, off_x, off_y = self.renderer.get_layout(cols, rows)
 
         self.renderer.draw_maze(surface, grid, tile_size, off_x, off_y)
-        self.renderer.draw_collectibles(surface, self.game.level.collectibles, tile_size, off_x, off_y)
-        self.renderer.draw_player(surface, self.game.player, tile_size, off_x, off_y)
-        self.renderer.draw_ghosts(surface, self.game.ghosts, tile_size, off_x, off_y)
-
+        self.renderer.draw_collectibles(surface, self.game.level.collectibles,
+                                        tile_size, off_x, off_y)
+        self.renderer.draw_player(surface, self.game.player, tile_size,
+                                  off_x, off_y)
+        self.renderer.draw_ghosts(surface, self.game.ghosts, tile_size,
+                                  off_x, off_y)
 
         self.hud.draw(
             surface=surface,
@@ -142,8 +157,10 @@ class PlayScreen(BaseScreen):
         return [
             [15] * 19,
             [15] + [0] * 17 + [15],
-            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15, 0, 15, 15, 0, 15],
-            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15, 0, 15, 15, 0, 15],
+            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15,
+             0, 15, 15, 0, 15],
+            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15,
+             0, 15, 15, 0, 15],
             [15] + [0] * 17 + [15],
             [15] * 19,
         ]

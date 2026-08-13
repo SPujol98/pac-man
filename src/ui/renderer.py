@@ -54,7 +54,8 @@ class Renderer:
             if path.is_file():
                 try:
                     img = pygame.image.load(str(path)).convert_alpha()
-                    self.sprites[key] = pygame.transform.scale(img, (tile_size, tile_size))
+                    self.sprites[key] = (pygame.transform.scale(
+                        img, (tile_size, tile_size)))
                 except pygame.error:
                     pass
 
@@ -65,7 +66,8 @@ class Renderer:
         off_y = ((self.height - 40 - (rows * tile_size)) // 2) + 40
         return tile_size, off_x, off_y
 
-    def draw_maze(self, surface: pygame.Surface, grid: List[List[int]], tile_size: int, off_x: int, off_y: int) -> None:
+    def draw_maze(self, surface: pygame.Surface, grid: List[List[int]],
+                  tile_size: int, off_x: int, off_y: int) -> None:
         """Draw the walls of the maze according to the level's grid."""
         rows = len(grid)
         cols = len(grid[0]) if rows > 0 else 1
@@ -77,18 +79,31 @@ class Renderer:
                 y = off_y + (r * tile_size)
 
                 if val == 15 or val == 1:
-                    pygame.draw.rect(surface, self.COLOR_WALL, (x, y, tile_size, tile_size), width=2, border_radius=3)
+                    pygame.draw.rect(
+                        surface, self.COLOR_WALL,
+                        (x, y, tile_size, tile_size), width=2, border_radius=3)
                 elif val > 0:
                     if val & 1:
-                        pygame.draw.line(surface, self.COLOR_WALL, (x, y), (x + tile_size, y), 2)
+                        pygame.draw.line(surface, self.COLOR_WALL,
+                                         (x, y), (x + tile_size, y), 2)
                     if val & 2:
-                        pygame.draw.line(surface, self.COLOR_WALL, (x + tile_size, y), (x + tile_size, y + tile_size), 2)
+                        pygame.draw.line(
+                            surface, self.COLOR_WALL,
+                            (x + tile_size, y),
+                            (x + tile_size, y + tile_size), 2)
                     if val & 4:
-                        pygame.draw.line(surface, self.COLOR_WALL, (x, y + tile_size), (x + tile_size, y + tile_size), 2)
+                        pygame.draw.line(
+                            surface, self.COLOR_WALL,
+                            (x, y + tile_size),
+                            (x + tile_size, y + tile_size), 2)
                     if val & 8:
-                        pygame.draw.line(surface, self.COLOR_WALL, (x, y), (x, y + tile_size), 2)
+                        pygame.draw.line(
+                            surface, self.COLOR_WALL,
+                            (x, y), (x, y + tile_size), 2)
 
-    def draw_collectibles(self, surface: pygame.Surface, collectibles: List[Collectible], tile_size: int, off_x: int, off_y: int) -> None:
+    def draw_collectibles(
+            self, surface: pygame.Surface, collectibles: List[Collectible],
+            tile_size: int, off_x: int, off_y: int) -> None:
         """Draw the Pacgums and Superpacgums."""
         for item in collectibles:
             cx, cy = item.cell
@@ -96,12 +111,18 @@ class Renderer:
             center_y = off_y + (cy * tile_size) + (tile_size // 2)
 
             if item.sprite_id == "superpacgum":
-                pygame.draw.circle(surface, self.COLOR_SUPER_PACGUM, (center_x, center_y), max(4, tile_size // 4))
+                pygame.draw.circle(
+                    surface, self.COLOR_SUPER_PACGUM,
+                    (center_x, center_y), max(4, tile_size // 4))
             else:
-                pygame.draw.circle(surface, self.COLOR_PACGUM, (center_x, center_y), max(2, tile_size // 8))
+                pygame.draw.circle(
+                    surface, self.COLOR_PACGUM,
+                    (center_x, center_y), max(2, tile_size // 8))
 
-    def draw_player(self, surface: pygame.Surface, player: Player, tile_size: int, off_x: int, off_y: int) -> None:
-        """Draw Pac-Man by smoothly interpolating his position using the `progress` function."""
+    def draw_player(self, surface: pygame.Surface, player: Player,
+                    tile_size: int, off_x: int, off_y: int) -> None:
+        """Draw Pac-Man by smoothly interpolating his position
+        using the `progress` function."""
         px, py = float(player.cell[0]), float(player.cell[1])
         if player.direction is not None:
             px += player.direction.dx * player.progress
@@ -116,9 +137,12 @@ class Renderer:
             surface.blit(rotated, (screen_x, screen_y))
         else:
             center = (screen_x + tile_size // 2, screen_y + tile_size // 2)
-            pygame.draw.circle(surface, self.COLOR_PACMAN, center, max(4, tile_size // 2 - 2))
+            pygame.draw.circle(
+                surface, self.COLOR_PACMAN,
+                center, max(4, tile_size // 2 - 2))
 
-    def draw_ghosts(self, surface: pygame.Surface, ghosts: List[Ghost], tile_size: int, off_x: int, off_y: int) -> None:
+    def draw_ghosts(self, surface: pygame.Surface, ghosts: List[Ghost],
+                    tile_size: int, off_x: int, off_y: int) -> None:
         """Draw the ghosts with smooth animation between frames."""
         for ghost in ghosts:
             gx, gy = float(ghost.cell[0]), float(ghost.cell[1])
@@ -129,7 +153,9 @@ class Renderer:
             screen_x = int(off_x + (gx * tile_size))
             screen_y = int(off_y + (gy * tile_size))
 
-            sprite_key = "frightened" if ghost.state == GhostState.FRIGHTENED else ghost.ghost_type.lower()
+            sprite_key = ("frightened" if
+                          ghost.state == GhostState.FRIGHTENED
+                          else ghost.ghost_type.lower())
 
             if sprite_key in self.sprites:
                 surface.blit(self.sprites[sprite_key], (screen_x, screen_y))
@@ -139,11 +165,18 @@ class Renderer:
                     if ghost.state == GhostState.FRIGHTENED
                     else self.GHOST_COLORS.get(ghost.ghost_type, (255, 0, 0))
                 )
-                head_center = (screen_x + tile_size // 2, screen_y + tile_size // 3)
+                head_center = (screen_x + tile_size // 2,
+                               screen_y + tile_size // 3)
                 pygame.draw.circle(surface, color, head_center, tile_size // 3)
-                pygame.draw.rect(surface, color, (screen_x + 2, screen_y + tile_size // 3, tile_size - 4, tile_size // 2))
+                pygame.draw.rect(
+                    surface, color, (screen_x + 2, screen_y + tile_size
+                                     // 3, tile_size - 4, tile_size // 2))
 
                 eye_y = screen_y + tile_size // 3
                 eye_r = max(1, tile_size // 8)
-                pygame.draw.circle(surface, (255, 255, 255), (screen_x + tile_size // 3, eye_y), eye_r)
-                pygame.draw.circle(surface, (255, 255, 255), (screen_x + 2 * tile_size // 3, eye_y), eye_r)
+                pygame.draw.circle(
+                    surface, (255, 255, 255),
+                    (screen_x + tile_size // 3, eye_y), eye_r)
+                pygame.draw.circle(
+                    surface, (255, 255, 255),
+                    (screen_x + 2 * tile_size // 3, eye_y), eye_r)
