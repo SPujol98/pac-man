@@ -12,8 +12,8 @@ from src.ui.renderer import Renderer
 
 
 class PlayScreen(BaseScreen):
-    """Controla el flujo visual de la partida leyendo
-    la configuración dinámica del JSON."""
+    """Controls the game's visual flow by reading
+    the dynamic JSON configuration"""
 
     def __init__(self, screen_width: int, screen_height: int,
                  config_or_data: Any = None) -> None:
@@ -45,8 +45,8 @@ class PlayScreen(BaseScreen):
     def _parse_config(self,
                       config_or_data: Any) -> Tuple[List[List[int]],
                                                     int, int, int, float]:
-        """Extrae vidas, tiempos, puntos y genera el laberinto según
-        la configuración cargada."""
+        """Retrieves lives, times, and points, and generates the
+        maze based on the loaded settings."""
         lives = 3
         pacgum_pts = 10
         superpacgum_pts = 50
@@ -97,7 +97,7 @@ class PlayScreen(BaseScreen):
         return grid, lives, pacgum_pts, superpacgum_pts, time_limit
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
-        """Maneja pausa y controles del jugador."""
+        """Manages the player's pause and controls."""
         if event.type == pygame.KEYDOWN and event.key in (pygame.K_p,
                                                           pygame.K_ESCAPE):
             return GameState.PAUSED
@@ -109,8 +109,8 @@ class PlayScreen(BaseScreen):
         return GameState.PLAYING
 
     def update(self) -> Any:
-        """Actualiza la física y revisa fin de juego.
-        Retorna GameState o None para cumplir con BaseScreen."""
+        """Update the physics and check the end of the game.
+        Return GameState or None to comply with BaseScreen."""
         dt = self.clock.tick(60) / 1000.0
 
         self.game._update(dt)
@@ -120,14 +120,13 @@ class PlayScreen(BaseScreen):
                 state: GameState = GameState.GAME_OVER
                 return state
             elif self.game.level.is_completed():
-                # Asegúrate de que GameState.VICTORY exista en src/states.py
-                state = GameState.VICTORY  # type: ignore[attr-defined]
+                state = GameState.WIN
                 return state
         state_playing: GameState = GameState.PLAYING
         return state_playing
 
     def draw(self, surface: pygame.Surface) -> None:
-        """Delegación completa del pintado a Renderer y HUD."""
+        """Full delegation of painting to the Renderer and HUD."""
         surface.fill((0, 0, 0))
 
         grid = self.game.level.grid
@@ -153,7 +152,7 @@ class PlayScreen(BaseScreen):
         )
 
     def _get_default_grid(self) -> List[List[int]]:
-        """Cuadrícula de seguridad en caso de fallo."""
+        """Fail-safe grid."""
         return [
             [15] * 19,
             [15] + [0] * 17 + [15],

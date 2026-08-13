@@ -19,12 +19,6 @@ class InstructionsMenu(BaseScreen):
         self.label_font = pygame.font.SysFont("Arial", 15, bold=True)
         self.body_font = pygame.font.SysFont("Arial", 14)
 
-        self.COLOR_BG = (10, 10, 15)
-        self.COLOR_TITLE = (255, 255, 0)
-        self.COLOR_BORDER = (33, 33, 222)
-        self.COLOR_HEADER = (255, 183, 255)
-        self.COLOR_TEXT = (220, 220, 220)
-        self.COLOR_DOT = (255, 183, 82)
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Press the ESC key to return to the main menu."""
@@ -78,7 +72,7 @@ class InstructionsMenu(BaseScreen):
             self.body_font.render(
                 "Navigate Pac-Man through the maze corridors.",
                 True,
-                self.COLOR_TEXT
+                self.COLOR_TEXT1
             ),
             (curr_x, 110)
         )

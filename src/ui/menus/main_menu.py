@@ -27,13 +27,6 @@ class MainMenu(BaseScreen):
         self.option_font = pygame.font.SysFont("Arial", 22, bold=True)
         self.footer_font = pygame.font.SysFont("Arial", 14)
 
-        self.COLOR_BG = (10, 10, 15)
-        self.COLOR_TITLE = (255, 255, 0)
-        self.COLOR_BORDER = (33, 33, 222)
-        self.COLOR_CARD_BG = (15, 15, 25)
-        self.COLOR_SELECTED = (255, 183, 255)
-        self.COLOR_NORMAL = (200, 200, 210)
-        self.COLOR_HIGHLIGHT = (40, 20, 50)
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Processes keyboard navigation."""

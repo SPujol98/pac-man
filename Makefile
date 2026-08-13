@@ -2,7 +2,7 @@
 UV = uv
 
 # Main files
-MAIN = src/testingApp.py
+MAIN = pac-man.py
 WHEEL = mazegenerator-00001-py3-none-any.whl
 
 # MyPy Flags

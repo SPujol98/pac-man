@@ -2,7 +2,7 @@ import sys
 import pygame
 from typing import Any
 from src.states import GameState
-from src.ui.menus import MainMenu, HighscoresMenu, InstructionsMenu, BaseScreen
+from src.ui.menus import MainMenu, HighscoresMenu, InstructionsMenu, BaseScreen, PauseMenu
 from src.ui.play_screen import PlayScreen
 from src.level_manager.maze_loader import load_maze
 
@@ -49,6 +49,8 @@ class App:
             GameState.PLAYING: PlayScreen(self.VIRTUAL_WIDTH,
                                           self.VIRTUAL_HEIGHT,
                                           self.config),
+            GameState.PAUSED: PauseMenu(self.VIRTUAL_WIDTH,
+                                        self.VIRTUAL_HEIGHT),
         }
 
     def run(self) -> None:

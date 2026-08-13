@@ -66,9 +66,16 @@ class Renderer:
         off_y = ((self.height - 40 - (rows * tile_size)) // 2) + 40
         return tile_size, off_x, off_y
 
-    def draw_maze(self, surface: pygame.Surface, grid: List[List[int]],
-                  tile_size: int, off_x: int, off_y: int) -> None:
-        """Draw the walls of the maze according to the level's grid."""
+    def draw_maze(
+        self,
+        surface: pygame.Surface,
+        grid: List[List[int]],
+        tile_size: int,
+        off_x: int,
+        off_y: int
+    ) -> None:
+        """Draw the walls of the maze while preserving the
+        individual bits of each cell."""
         rows = len(grid)
         cols = len(grid[0]) if rows > 0 else 1
 
@@ -78,28 +85,29 @@ class Renderer:
                 x = off_x + (c * tile_size)
                 y = off_y + (r * tile_size)
 
-                if val == 15 or val == 1:
-                    pygame.draw.rect(
-                        surface, self.COLOR_WALL,
-                        (x, y, tile_size, tile_size), width=2, border_radius=3)
+                if val == 15:
+                    rect = pygame.Rect(x, y, tile_size, tile_size)
+                    pygame.draw.rect(surface, self.COLOR_WALL,
+                                     rect, width=2, border_radius=3)
+
                 elif val > 0:
                     if val & 1:
                         pygame.draw.line(surface, self.COLOR_WALL,
                                          (x, y), (x + tile_size, y), 2)
+
                     if val & 2:
-                        pygame.draw.line(
-                            surface, self.COLOR_WALL,
-                            (x + tile_size, y),
-                            (x + tile_size, y + tile_size), 2)
+                        pygame.draw.line(surface, self.COLOR_WALL,
+                                         (x + tile_size, y),
+                                         (x + tile_size, y + tile_size), 2)
+
                     if val & 4:
-                        pygame.draw.line(
-                            surface, self.COLOR_WALL,
-                            (x, y + tile_size),
-                            (x + tile_size, y + tile_size), 2)
+                        pygame.draw.line(surface, self.COLOR_WALL,
+                                         (x, y + tile_size),
+                                         (x + tile_size, y + tile_size), 2)
+
                     if val & 8:
-                        pygame.draw.line(
-                            surface, self.COLOR_WALL,
-                            (x, y), (x, y + tile_size), 2)
+                        pygame.draw.line(surface, self.COLOR_WALL,
+                                         (x, y), (x, y + tile_size), 2)
 
     def draw_collectibles(
             self, surface: pygame.Surface, collectibles: List[Collectible],
