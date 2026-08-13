@@ -19,12 +19,15 @@ class Ghost(MovingEntity):
     """
     def __init__(self, cell: tuple[int, int], ghost_type: str, speed: float,
                  scatter_corner: tuple[int, int],
+                 points: int,
                  direction: Optional[Direction] = None):
         super().__init__(cell, ghost_type, speed, direction)
         self.ghost_type = ghost_type
         self.state: GhostState = GhostState.SCATTER
         self.scatter_corner = scatter_corner
+        self.points = points
         self.spawn_pos = cell
+        self.respawn_timer: float = 7.0
 
     def _choose_direction(
             self, level: Level,
@@ -96,3 +99,25 @@ class Ghost(MovingEntity):
                 return self.scatter_corner
             case _:
                 return player.cell
+
+    def get_current_speed(self, player: Optional["Player"] = None):
+        match self.state:
+            case GhostState.CHASE:
+                return self.speed
+            case GhostState.FRIGHTENED:
+                if player is not None:
+                    return player.speed * (2/3)
+                return 2.0
+            case GhostState.SCATTER:
+                return self.speed
+            case GhostState.EATEN:
+                return self.speed * 2
+
+    def update(self, dt: float, level: "Level",
+               player: Optional["Player"] = None):
+        super().update(dt, level, player)
+        if self.state == GhostState.EATEN:
+            self.respawn_timer -= dt
+            if self.respawn_timer <= 0.0 and self.cell == self.spawn_pos:
+                self.state = GhostState.SCATTER
+                self.respawn_timer = 7.0
