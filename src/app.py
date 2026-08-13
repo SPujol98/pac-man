@@ -27,8 +27,8 @@ class App:
             )
 
         window_cfg = config.get("window", {})
-        self.real_width = window_cfg.get("width", 800)
-        self.real_height = window_cfg.get("height", 600)
+        self.real_width = window_cfg.get("width", 1600)
+        self.real_height = window_cfg.get("height", 1200)
         self.fps = window_cfg.get("fps", 60)
 
         self.screen = pygame.display.set_mode(
