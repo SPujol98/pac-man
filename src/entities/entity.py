@@ -59,7 +59,7 @@ class MovingEntity(Entity):
                 return
 
         # Advance a percentage of the cell based on speed and time
-        self.progress += self.speed * dt
+        self.progress += self.get_current_speed(player) * dt
 
         # If we reach 1.0, we have crossed to the center of the next cell
         if self.progress >= 1.0:
@@ -78,6 +78,9 @@ class MovingEntity(Entity):
                 # retain the excess progress to maintain smooth movement
                 self.direction = next_dir
                 self.progress -= 1.0
+
+    def get_current_speed(self, player: Optional["Player"] = None) -> float:
+        return self.speed
 
 
 class Collectible(Entity):

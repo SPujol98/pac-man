@@ -35,6 +35,7 @@ class Level:
         self.grid = grid
         self.ghost_points = ghost_points
         self.time_left = time_left
+        self.ghost_points = ghost_points
         self.collectibles: list[Collectible] = []
         self.player_spawn: tuple[int, int] = (0, 0)
         self.ghost_spawns: list[tuple[int, int]] = []
