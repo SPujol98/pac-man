@@ -73,7 +73,8 @@ class App:
             self.clock.tick(self.fps)
 
     def _change_state(self, new_state: GameState) -> None:
-        """Cambia el estado actual e inyecta la puntuación si es pantalla final."""
+        """Cambia el estado actual e inyecta la puntuación
+        si es pantalla final."""
         if new_state in (GameState.GAME_OVER, GameState.WIN):
             play_screen = self.screens.get(GameState.PLAYING)
             target_screen = self.screens.get(new_state)
@@ -82,7 +83,6 @@ class App:
                 final_score = getattr(play_screen, "game", None)
                 score_val = final_score.score if final_score else 0
                 target_screen.set_final_score(score_val)
-
         self.state = new_state
 
     def _handle_events(self) -> None:
@@ -100,7 +100,8 @@ class App:
                 current_screen = self.screens.get(self.state)
                 if current_screen:
                     new_state = current_screen.handle_event(event)
-                    if new_state is None and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    if (new_state is None and event.type == pygame.KEYDOWN
+                            and event.key == pygame.K_ESCAPE):
                         self.is_running = False
                     elif new_state is not None and new_state != self.state:
                         self._change_state(new_state)
@@ -131,9 +132,6 @@ class App:
 
         self.screen.blit(scaled_surface, (pos_x, pos_y))
         pygame.display.flip()
-
-
-
 
     '''
     def run(self) -> None:
@@ -176,7 +174,8 @@ class App:
                         self._change_state(new_state)
 
     def _update(self) -> None:
-        """Actualiza la lógica de la pantalla actual y procesa cambios de estado."""
+        """Actualiza la lógica de la pantalla actual y
+        procesa cambios de estado."""
         current_screen = self.screens.get(self.state)
         if current_screen:
             new_state = current_screen.update()

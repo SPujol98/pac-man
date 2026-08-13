@@ -17,6 +17,8 @@ class Game:
         self.is_running: bool = True
         self.score: int = 0
         self.lives = lives
+        self.wave_timer: float = 7.0
+        self.global_state: GhostState = GhostState.SCATTER
 
         self.player = Player(self.level.player_spawn, 5.0, self.lives)
         g_spawn1, g_spawn2, g_spawn3, g_spawn4 = self.level.ghost_spawns
@@ -32,24 +34,35 @@ class Game:
                   self.level.ghost_points)
         ]
 
-    def _handle_events(self) -> None:
-        """Process keyboard and window events."""
-        pass
-
     def _update(self, dt: float) -> None:
         """Update game logic, entity positions, and collisions."""
+        self.wave_timer -= dt
         self.level.update(dt)
         self.player.update(dt, self.level)
+        if self.wave_timer <= 0:
+            if self.global_state == GhostState.SCATTER:
+                self.global_state = GhostState.CHASE
+                self.wave_timer = 15.0
+            else:
+                self.global_state = GhostState.SCATTER
+                self.wave_timer = 7.0
+            for gh in self.ghosts:
+                if (gh.state == GhostState.FRIGHTENED
+                        or gh.state == GhostState.EATEN):
+                    continue
+                gh.state = self.global_state
         for gh in self.ghosts:
             gh.update(dt, self.level, self.player)
             if gh.cell == self.player.cell and gh.state != GhostState.EATEN:
                 if gh.state == GhostState.FRIGHTENED:
                     gh.state = GhostState.EATEN
                     self.score += gh.points
-
                 else:
                     self.player.lives -= 1
+                    self.lives -= 1
                     self.player.cell = self.level.player_spawn
+                    for fa in self.ghosts:
+                        fa.cell = fa.spawn_pos
         for item in self.level.collectibles[:]:
             if item.cell == self.player.cell:
                 self.score += item.points
@@ -61,15 +74,9 @@ class Game:
                 or self.lives <= 0):
             self.is_running = False
 
-    def _render(self) -> None:
-        """Draw the current game state to the screen."""
-        pass
-
     def run(self) -> None:
         """The main Game Loop."""
         while self.is_running:
-            self._handle_events()
             self._update(0.016)
-            self._render()
         print("Game Finished!")
         print(f"Finally score: {self.score}")
