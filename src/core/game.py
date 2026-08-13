@@ -22,10 +22,14 @@ class Game:
         g_spawn1, g_spawn2, g_spawn3, g_spawn4 = self.level.ghost_spawns
         c1, c2, c3, c4 = self.level.superpacgum_spawns
         self.ghosts = [
-            Ghost(g_spawn1, "blinky", 4.5, c2),
-            Ghost(g_spawn2, "pinky", 4.5, c1),
-            Ghost(g_spawn3, "inky", 4.5, c4),
-            Ghost(g_spawn4, "clyde", 4.5, c3)
+            Ghost(g_spawn1, "blinky", self.player.speed - 0.5, c2,
+                  self.level.ghost_points),
+            Ghost(g_spawn2, "pinky", self.player.speed - 0.5, c1,
+                  self.level.ghost_points),
+            Ghost(g_spawn3, "inky", self.player.speed - 0.5, c4,
+                  self.level.ghost_points),
+            Ghost(g_spawn4, "clyde", self.player.speed - 0.5, c3,
+                  self.level.ghost_points)
         ]
 
     def _handle_events(self) -> None:
@@ -38,6 +42,14 @@ class Game:
         self.player.update(dt, self.level)
         for gh in self.ghosts:
             gh.update(dt, self.level, self.player)
+            if gh.cell == self.player.cell and gh.state != GhostState.EATEN:
+                if gh.state == GhostState.FRIGHTENED:
+                    gh.state = GhostState.EATEN
+                    self.score += gh.points
+
+                else:
+                    self.player.lives -= 1
+                    self.player.cell = self.level.player_spawn
         for item in self.level.collectibles[:]:
             if item.cell == self.player.cell:
                 self.score += item.points

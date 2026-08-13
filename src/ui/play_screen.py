@@ -26,13 +26,14 @@ class PlayScreen(BaseScreen):
         self.hud = HUD(screen_width, screen_height)
         self.renderer = Renderer(screen_width, screen_height)
 
-        grid, lives, pacgum_pts, superpacgum_pts, time_limit = (
+        grid, lives, pacgum_pts, superpacgum_pts, ghost_pts, time_limit = (
             self._parse_config(config_or_data))
 
         self.level = Level(
             grid=grid,
             pacgum_points=pacgum_pts,
             superpacgum_points=superpacgum_pts,
+            ghost_points=ghost_pts,
             time_left=time_limit
         )
         self.game = Game(level=self.level, lives=lives)
@@ -42,59 +43,33 @@ class PlayScreen(BaseScreen):
         tile_size, _, _ = self.renderer.get_layout(cols, rows)
         self.renderer.load_sprites_for_tile_size(tile_size)
 
-    def _parse_config(self,
-                      config_or_data: Any) -> Tuple[List[List[int]],
-                                                    int, int, int, float]:
-        """Retrieves lives, times, and points, and generates the
-        maze based on the loaded settings."""
-        lives = 3
-        pacgum_pts = 10
-        superpacgum_pts = 50
-        time_limit = 90.0
-        grid = None
-
+    def _parse_config(self, config_or_data: Any) -> Tuple[
+         List[List[int]], int, int, int, int, float]:
+        """Retrieve the array and parameters, assuming that
+        config_parser has already parsed the JSON."""
         if isinstance(config_or_data, dict):
-
-            lives = config_or_data.get("lives", lives)
-            pacgum_pts = config_or_data.get("points_per_pacgum", pacgum_pts)
-            superpacgum_pts = config_or_data.get("points_per_super_pacgum",
-                                                 superpacgum_pts)
-            time_limit = float(config_or_data.get("level_max_time",
-                                                  time_limit))
+            lives = config_or_data.get("lives", 3)
+            pacgum_pts = config_or_data.get("points_per_pacgum", 10)
+            superpacgum_pts = config_or_data.get("points_per_super_pacgum", 50)
+            time_limit = float(config_or_data.get("level_max_time", 90))
             seed = config_or_data.get("seed", 42)
-
-            if "grid" in config_or_data:
-                grid = config_or_data["grid"]
-            elif "maze_grid" in config_or_data:
-                grid = config_or_data["maze_grid"]
+            ghost_points = config_or_data.get("points_per_ghost", 200)
+            levels = config_or_data.get("level", [])
+            if levels and self.current_level_index < len(levels):
+                lvl_cfg = levels[self.current_level_index]
+                w, h = lvl_cfg["width"], lvl_cfg["height"]
             else:
-                levels = config_or_data.get("level", [])
-                if levels and self.current_level_index < len(levels):
-                    lvl_cfg = levels[self.current_level_index]
-                    w = int(lvl_cfg.get("width", 21))
-                    h = int(lvl_cfg.get("height", 21))
-                else:
-                    maze_cfg = config_or_data.get("maze", {})
-                    w = int(maze_cfg.get("width", 21))
-                    h = int(maze_cfg.get("height", 21))
+                w, h = 21, 21
+            try:
+                maze_data = load_maze(width=w, height=h, seed=seed)
+                grid = maze_data.grid
+            except Exception as err:
+                print(f"[Warning] No se pudo generar el laberinto: {err}")
+                grid = self._get_default_grid()
 
-                try:
-                    maze_data = load_maze(width=w, height=h, seed=seed)
-                    grid = maze_data.grid
-                except Exception as err:
-                    print("[Warning] No se pudo generar el "
-                          f"laberinto con load_maze: {err}")
-                    grid = None
-
-        elif hasattr(config_or_data, "grid"):
-            grid = config_or_data.grid
-            if hasattr(config_or_data, "lives"):
-                lives = getattr(config_or_data, "lives")
-
-        if grid is None:
-            grid = self._get_default_grid()
-
-        return grid, lives, pacgum_pts, superpacgum_pts, time_limit
+            return (grid, lives, pacgum_pts, superpacgum_pts,
+                    ghost_points, time_limit)
+        return self._get_default_grid(), 3, 10, 50, 200, 90.0
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Manages the player's pause and controls."""
