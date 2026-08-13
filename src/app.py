@@ -1,4 +1,3 @@
-import sys
 import pygame
 from typing import Any
 from src.states import GameState
@@ -8,6 +7,8 @@ from src.ui.menus import (
     InstructionsMenu,
     BaseScreen,
     PauseMenu,
+    GameOverScreen,
+    WinScreen
 )
 from src.ui.play_screen import PlayScreen
 from src.level_manager.maze_loader import load_maze
@@ -27,8 +28,8 @@ class App:
             )
 
         window_cfg = config.get("window", {})
-        self.real_width = window_cfg.get("width", 800)
-        self.real_height = window_cfg.get("height", 600)
+        self.real_width = window_cfg.get("width", 1600)
+        self.real_height = window_cfg.get("height", 1200)
         self.fps = window_cfg.get("fps", 60)
 
         self.screen = pygame.display.set_mode(
@@ -57,6 +58,10 @@ class App:
                                           self.config),
             GameState.PAUSED: PauseMenu(self.VIRTUAL_WIDTH,
                                         self.VIRTUAL_HEIGHT),
+            GameState.GAME_OVER: GameOverScreen(self.VIRTUAL_WIDTH,
+                                                self.VIRTUAL_HEIGHT),
+            GameState.WIN: WinScreen(self.VIRTUAL_WIDTH,
+                                     self.VIRTUAL_HEIGHT),
         }
 
     def run(self) -> None:
@@ -67,8 +72,18 @@ class App:
             self._render()
             self.clock.tick(self.fps)
 
-        pygame.quit()
-        sys.exit()
+    def _change_state(self, new_state: GameState) -> None:
+        """Cambia el estado actual e inyecta la puntuación si es pantalla final."""
+        if new_state in (GameState.GAME_OVER, GameState.WIN):
+            play_screen = self.screens.get(GameState.PLAYING)
+            target_screen = self.screens.get(new_state)
+
+            if play_screen and hasattr(target_screen, "set_final_score"):
+                final_score = getattr(play_screen, "game", None)
+                score_val = final_score.score if final_score else 0
+                target_screen.set_final_score(score_val)
+
+        self.state = new_state
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():
@@ -85,10 +100,10 @@ class App:
                 current_screen = self.screens.get(self.state)
                 if current_screen:
                     new_state = current_screen.handle_event(event)
-                    if new_state is None:
+                    if new_state is None and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                         self.is_running = False
-                    elif new_state != self.state:
-                        self.state = new_state
+                    elif new_state is not None and new_state != self.state:
+                        self._change_state(new_state)
 
     def _update(self) -> None:
 
@@ -116,3 +131,56 @@ class App:
 
         self.screen.blit(scaled_surface, (pos_x, pos_y))
         pygame.display.flip()
+
+
+
+
+    '''
+    def run(self) -> None:
+        """Main execution loop."""
+        while self.is_running:
+            self._handle_events()
+            self._update()
+            self._render()
+            self.clock.tick(self.fps)
+
+    def _change_state(self, new_state: GameState) -> None:
+        """Centraliza la transición de estados y la transferencia de datos."""
+        if new_state in (GameState.GAME_OVER, GameState.WIN):
+            play_screen = self.screens.get(GameState.PLAYING)
+            target_screen = self.screens.get(new_state)
+
+            if play_screen and hasattr(target_screen, "set_final_score"):
+                final_score = play_screen.game.score
+                target_screen.set_final_score(final_score)
+        self.state = new_state
+
+    def _handle_events(self) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.is_running = False
+
+            elif event.type == pygame.VIDEORESIZE:
+                self.real_width, self.real_height = event.w, event.h
+                self.screen = pygame.display.set_mode(
+                    (self.real_width, self.real_height), pygame.RESIZABLE
+                )
+
+            else:
+                current_screen = self.screens.get(self.state)
+                if current_screen:
+                    new_state = current_screen.handle_event(event)
+                    if new_state is None:
+                        self.is_running = False
+                    elif new_state != self.state:
+                        self._change_state(new_state)
+
+    def _update(self) -> None:
+        """Actualiza la lógica de la pantalla actual y procesa cambios de estado."""
+        current_screen = self.screens.get(self.state)
+        if current_screen:
+            new_state = current_screen.update()
+            if new_state is None:
+                self.is_running = False
+            elif new_state and new_state != self.state:
+                self._change_state(new_state)'''

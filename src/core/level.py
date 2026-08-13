@@ -33,6 +33,7 @@ class Level:
                  ghost_points: int,
                  time_left: float = 90.0) -> None:
         self.grid = grid
+        self.ghost_points = ghost_points
         self.time_left = time_left
         self.ghost_points = ghost_points
         self.collectibles: list[Collectible] = []
