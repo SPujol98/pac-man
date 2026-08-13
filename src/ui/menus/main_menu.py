@@ -27,7 +27,6 @@ class MainMenu(BaseScreen):
         self.option_font = pygame.font.SysFont("Arial", 22, bold=True)
         self.footer_font = pygame.font.SysFont("Arial", 14)
 
-
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Processes keyboard navigation."""
         if event.type == pygame.KEYDOWN:

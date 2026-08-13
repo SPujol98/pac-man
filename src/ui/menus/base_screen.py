@@ -21,7 +21,6 @@ class BaseScreen(ABC):
     COLOR_KEY_BG = (40, 40, 50)
     COLOR_KEY_BORDER = (0, 255, 255)
 
-
     def __init__(self, screen_width: int, screen_height: int):
         self.width = screen_width
         self.height = screen_height
@@ -64,10 +63,3 @@ class BaseScreen(ABC):
 
         surface.blit(text_surf, (x + padding_x, y + padding_y))
         return width
-
-
-
-
-
-
-

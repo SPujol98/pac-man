@@ -19,7 +19,6 @@ class InstructionsMenu(BaseScreen):
         self.label_font = pygame.font.SysFont("Arial", 15, bold=True)
         self.body_font = pygame.font.SysFont("Arial", 14)
 
-
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Press the ESC key to return to the main menu."""
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
