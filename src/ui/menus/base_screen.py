@@ -7,6 +7,20 @@ from src.states import GameState
 class BaseScreen(ABC):
     """A common interface and customizable graphical tools for any display."""
 
+    COLOR_BG = (10, 10, 15)
+    COLOR_TEXT = (255, 255, 255)
+    COLOR_TEXT1 = (220, 220, 220)
+    COLOR_TITLE = (255, 255, 0)
+    COLOR_BORDER = (33, 33, 222)
+    COLOR_HEADER = (255, 183, 255)
+    COLOR_DOT = (255, 183, 82)
+    COLOR_CARD_BG = (15, 15, 25)
+    COLOR_SELECTED = (255, 183, 255)
+    COLOR_NORMAL = (200, 200, 210)
+    COLOR_HIGHLIGHT = (40, 20, 50)
+    COLOR_KEY_BG = (40, 40, 50)
+    COLOR_KEY_BORDER = (0, 255, 255)
+
     def __init__(self, screen_width: int, screen_height: int):
         self.width = screen_width
         self.height = screen_height
@@ -15,8 +29,6 @@ class BaseScreen(ABC):
             pygame.font.init()
 
         self.key_font = pygame.font.SysFont("Arial", 12, bold=True)
-        self.COLOR_KEY_BG = (40, 40, 50)
-        self.COLOR_KEY_BORDER = (0, 255, 255)
 
     @abstractmethod
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:

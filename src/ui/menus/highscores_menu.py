@@ -10,8 +10,6 @@ class HighscoresMenu(BaseScreen):
     def __init__(self, screen_width: int, screen_height: int):
         super().__init__(screen_width, screen_height)
         self.font = pygame.font.SysFont("Arial", 28, bold=True)
-        self.COLOR_BG = (10, 10, 15)
-        self.COLOR_TEXT = (255, 255, 255)
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Press ESC to return to the main menu."""
