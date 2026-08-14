@@ -3,7 +3,7 @@ from src.app import App
 import argparse
 from src.systems.config_parser import load_config
 
-
+'''
 def main() -> None:
 
     parser = argparse.ArgumentParser(description="pacman")
@@ -29,6 +29,24 @@ def main() -> None:
         print("\n[Info] Game interrupted by user (Ctrl+C). "
               "Exiting gracefully...")
         _safe_pygame_quit()
+'''
+
+
+def main() -> None:
+
+    parser = argparse.ArgumentParser(description="pacman")
+
+    parser.add_argument('config_path',
+                        nargs='?',
+                        default='config.json',
+                        )
+
+    args = parser.parse_args()
+
+    config = load_config(args.config_path)
+    print("Starting Pac-Man 42...")
+    app = App(config)
+    app.run()
 
 
 def _safe_pygame_quit() -> None:

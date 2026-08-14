@@ -107,10 +107,11 @@ class App:
                         self._change_state(new_state)
 
     def _update(self) -> None:
-
         current_screen = self.screens.get(self.state)
         if current_screen:
-            current_screen.update()
+            new_state = current_screen.update()
+            if new_state and new_state != self.state:
+                self._change_state(new_state)
 
     def _render(self) -> None:
         self.virtual_screen.fill((0, 0, 0))

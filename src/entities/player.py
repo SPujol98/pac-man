@@ -40,6 +40,5 @@ class Player(MovingEntity):
         return None
 
     def reset_state(self) -> None:
-        self.direction = None
+        super().reset_state()
         self._buffered_direction = None
-        self.progress = 0.0

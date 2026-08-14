@@ -72,6 +72,7 @@ class Game:
                     self.player.reset_state()
                     self.player.cell = self.level.player_spawn
                     for fa in self.ghosts:
+                        fa.reset_state()
                         fa.cell = fa.spawn_pos
         for item in self.level.collectibles[:]:
             if item.cell == self.player.cell:
