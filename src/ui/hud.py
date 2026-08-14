@@ -27,14 +27,14 @@ class HUD:
         self.COLOR_TIME_WARN = (255, 50, 50)
         self.COLOR_LEVEL = (255, 183, 255)
         self.COLOR_PACMAN = (255, 255, 0)
-        self.COLOR_INVINCIBLE = (255, 0, 0)
 
     def _draw_life_icon(self, surface: pygame.Surface, x: int,
                         is_invincible: bool, y: int, radius: int = 7) -> None:
         """Draw a procedural Pac-Man icon with its mouth
         open to represent the lives."""
         if is_invincible:
-            pygame.draw.circle(surface, self.COLOR_INVINCIBLE, (x, y), radius)
+            pygame.draw.circle(surface, self.get_invincible_color(),
+                               (x, y), radius)
         else:
             pygame.draw.circle(surface, self.COLOR_PACMAN, (x, y), radius)
 
@@ -110,3 +110,10 @@ class HUD:
                 y=icon_y,
                 radius=7,
             )
+
+    def get_invincible_color(self) -> tuple[int, int, int]:
+        current_time = pygame.time.get_ticks()
+        hue = (current_time * 2) % 360
+        color = pygame.Color(0, 0, 0)
+        color.hsva = (hue, 100, 100, 100)
+        return (color.r, color.g, color.b)
