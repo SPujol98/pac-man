@@ -126,7 +126,8 @@ class PlayScreen(BaseScreen):
             score=self.game.score,
             lives=self.game.lives,
             level=self.current_level_index + 1,
-            time_remaining=int(self.game.level.time_left)
+            time_remaining=int(self.game.level.time_left),
+            invincible=self.game.player.is_invincible
         )
 
     def _get_default_grid(self) -> List[List[int]]:
