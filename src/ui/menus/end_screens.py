@@ -14,7 +14,7 @@ class GameOverScreen(BaseScoreEntryScreen):
             subtitle="Better luck next time!",
         )
 
-    def handle_event(self, event):
+    def handle_event(self, event) -> GameState:
         next_state = super().handle_event(event)
         return next_state or GameState.GAME_OVER
 
@@ -31,6 +31,6 @@ class WinScreen(BaseScoreEntryScreen):
             subtitle="Congratulations! You cleared the maze!",
         )
 
-    def handle_event(self, event):
+    def handle_event(self, event) -> GameState:
         next_state = super().handle_event(event)
         return next_state or GameState.WIN

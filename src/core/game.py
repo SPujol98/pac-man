@@ -16,11 +16,11 @@ class Game:
         self.level = level
         self.is_running: bool = True
         self.score: int = 0
-        self.lives = lives
         self.wave_timer: float = 7.0
+        self.frightened_timer: float = 0.0
         self.global_state: GhostState = GhostState.SCATTER
 
-        self.player = Player(self.level.player_spawn, 5.0, self.lives)
+        self.player = Player(self.level.player_spawn, 5.0, lives)
         g_spawn1, g_spawn2, g_spawn3, g_spawn4 = self.level.ghost_spawns
         c1, c2, c3, c4 = self.level.superpacgum_spawns
         self.ghosts = [
@@ -34,11 +34,21 @@ class Game:
                   self.level.ghost_points)
         ]
 
+    @property
+    def lives(self) -> int:
+        return self.player.lives
+
     def _update(self, dt: float) -> None:
         """Update game logic, entity positions, and collisions."""
         self.wave_timer -= dt
         self.level.update(dt)
         self.player.update(dt, self.level)
+        if self.frightened_timer > 0:
+            self.frightened_timer -= dt
+            if self.frightened_timer <= 0:
+                for gh in self.ghosts:
+                    if gh.state == GhostState.FRIGHTENED:
+                        gh.state = self.global_state
         if self.wave_timer <= 0:
             if self.global_state == GhostState.SCATTER:
                 self.global_state = GhostState.CHASE
@@ -59,7 +69,7 @@ class Game:
                     self.score += gh.points
                 else:
                     self.player.lives -= 1
-                    self.lives -= 1
+                    self.player.reset_state()
                     self.player.cell = self.level.player_spawn
                     for fa in self.ghosts:
                         fa.cell = fa.spawn_pos
@@ -68,10 +78,11 @@ class Game:
                 self.score += item.points
                 self.level.collectibles.remove(item)
                 if item.sprite_id == "superpacgum":
+                    self.frightened_timer = 8.0
                     for gh in self.ghosts:
                         gh.state = GhostState.FRIGHTENED
         if (self.level.is_completed() or self.level.time_left <= 0
-                or self.lives <= 0):
+                or self.player.lives <= 0):
             self.is_running = False
 
     def run(self) -> None:

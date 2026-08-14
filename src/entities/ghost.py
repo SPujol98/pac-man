@@ -100,7 +100,7 @@ class Ghost(MovingEntity):
             case _:
                 return player.cell
 
-    def get_current_speed(self, player: Optional["Player"] = None):
+    def get_current_speed(self, player: Optional["Player"] = None) -> float:
         match self.state:
             case GhostState.CHASE:
                 return self.speed
@@ -114,7 +114,7 @@ class Ghost(MovingEntity):
                 return self.speed * 2
 
     def update(self, dt: float, level: "Level",
-               player: Optional["Player"] = None):
+               player: Optional["Player"] = None) -> None:
         super().update(dt, level, player)
         if self.state == GhostState.EATEN:
             self.respawn_timer -= dt

@@ -19,6 +19,7 @@ class Player(MovingEntity):
         super().__init__(cell, "player", speed)
         self.lives = lives
         self._buffered_direction: Optional[Direction] = None
+        self.facing_direction = Direction.RIGHT
 
     def set_desired_direction(self, direction: Direction) -> None:
         self._buffered_direction = direction
@@ -30,8 +31,15 @@ class Player(MovingEntity):
                 not level.is_blocked(self.cell, self._buffered_direction)):
             chosen = self._buffered_direction
             self._buffered_direction = None
+            self.facing_direction = chosen
             return chosen
         elif (self.direction is not None and
                 not level.is_blocked(self.cell, self.direction)):
+            self.facing_direction = self.direction
             return self.direction
         return None
+
+    def reset_state(self) -> None:
+        self.direction = None
+        self._buffered_direction = None
+        self.progress = 0.0
