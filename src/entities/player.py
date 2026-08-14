@@ -20,6 +20,7 @@ class Player(MovingEntity):
         self.lives = lives
         self._buffered_direction: Optional[Direction] = None
         self.facing_direction = Direction.RIGHT
+        self.is_invincible: bool = False
 
     def set_desired_direction(self, direction: Direction) -> None:
         self._buffered_direction = direction
@@ -42,3 +43,6 @@ class Player(MovingEntity):
     def reset_state(self) -> None:
         super().reset_state()
         self._buffered_direction = None
+
+    def invincible_switch(self) -> None:
+        self.is_invincible = not self.is_invincible
