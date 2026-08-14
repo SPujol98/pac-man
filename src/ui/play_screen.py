@@ -77,6 +77,9 @@ class PlayScreen(BaseScreen):
                                                           pygame.K_ESCAPE):
             return GameState.PAUSED
 
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_i:
+            self.game.player.invincible_switch()
+
         requested_dir = self.input_handler.process_event(event)
         if requested_dir is not None:
             self.game.player.set_desired_direction(requested_dir)

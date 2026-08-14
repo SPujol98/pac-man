@@ -1,5 +1,17 @@
 [
     {
+        "name": "FAS",
+        "score": 900
+    },
+    {
+        "name": "SADA",
+        "score": 900
+    },
+    {
+        "name": "SAD",
+        "score": 900
+    },
+    {
         "name": "DAS",
         "score": 360
     },
@@ -14,5 +26,9 @@
     {
         "name": "YES",
         "score": 260
+    },
+    {
+        "name": "FASD",
+        "score": 170
     }
 ]
