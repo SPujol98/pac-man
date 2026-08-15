@@ -9,6 +9,7 @@ class GameState(Enum):
     WIN = "win"
     HIGHSCORES = "highscores"
     INSTRUCTIONS = "instructions"
+    QUIT = "quit"
 
 
 class GhostState(Enum):
