@@ -2,7 +2,7 @@ from __future__ import annotations
 from src.entities.player import Player
 from src.entities.ghost import Ghost
 from src.states import GhostState
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from src.core.level import Level
@@ -12,10 +12,11 @@ class Game:
     """The main game controller
     orchestrating logic, entities, and the game loop."""
 
-    def __init__(self, level: Level, lives: int) -> None:
+    def __init__(self, level: Level, lives: int,
+                 score: Optional[int] = 0) -> None:
         self.level = level
         self.is_running: bool = True
-        self.score: int = 0
+        self.score: int = score if score is not None else 0
         self.wave_timer: float = 7.0
         self.frightened_timer: float = 0.0
         self.global_state: GhostState = GhostState.SCATTER
@@ -83,8 +84,11 @@ class Game:
                     self.frightened_timer = 8.0
                     for gh in self.ghosts:
                         gh.state = GhostState.FRIGHTENED
-        if (self.level.is_completed() or self.level.time_left <= 0
-                or self.player.lives <= 0):
+        if self.level.is_completed():
+            pass
+        if (self.level.is_completed() or
+                self.level.time_left <= 0 or
+                self.player.lives <= 0):
             self.is_running = False
 
     def run(self) -> None:
