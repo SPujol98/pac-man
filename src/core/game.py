@@ -25,13 +25,13 @@ class Game:
         g_spawn1, g_spawn2, g_spawn3, g_spawn4 = self.level.ghost_spawns
         c1, c2, c3, c4 = self.level.superpacgum_spawns
         self.ghosts = [
-            Ghost(g_spawn1, "blinky", self.player.speed - 0.5, c2,
+            Ghost(g_spawn1, "blinky", self.player.speed - 1, c2,
                   self.level.ghost_points),
-            Ghost(g_spawn2, "pinky", self.player.speed - 0.5, c1,
+            Ghost(g_spawn2, "pinky", self.player.speed - 1, c1,
                   self.level.ghost_points),
-            Ghost(g_spawn3, "inky", self.player.speed - 0.5, c4,
+            Ghost(g_spawn3, "inky", self.player.speed - 1, c4,
                   self.level.ghost_points),
-            Ghost(g_spawn4, "clyde", self.player.speed - 0.5, c3,
+            Ghost(g_spawn4, "clyde", self.player.speed - 1, c3,
                   self.level.ghost_points)
         ]
 
