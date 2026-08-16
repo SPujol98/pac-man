@@ -1,4 +1,5 @@
 from src.states import GameState
+import pygame
 from src.ui.menus.base_score_entry import BaseScoreEntryScreen
 
 
@@ -14,7 +15,7 @@ class GameOverScreen(BaseScoreEntryScreen):
             subtitle="Better luck next time!",
         )
 
-    def handle_event(self, event) -> GameState:
+    def handle_event(self, event: pygame.event.Event) -> GameState:
         next_state = super().handle_event(event)
         return next_state or GameState.GAME_OVER
 
@@ -31,6 +32,6 @@ class WinScreen(BaseScoreEntryScreen):
             subtitle="Congratulations! You cleared the maze!",
         )
 
-    def handle_event(self, event) -> GameState:
+    def handle_event(self, event: pygame.event.Event) -> GameState:
         next_state = super().handle_event(event)
         return next_state or GameState.WIN

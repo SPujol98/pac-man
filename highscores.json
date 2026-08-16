@@ -1,5 +1,17 @@
 [
     {
+        "name": "HOLA",
+        "score": 1920
+    },
+    {
+        "name": "MUNDO",
+        "score": 1590
+    },
+    {
+        "name": "WIN",
+        "score": 1390
+    },
+    {
         "name": "DAS",
         "score": 1360
     },
@@ -26,17 +38,5 @@
     {
         "name": "ASDA",
         "score": 700
-    },
-    {
-        "name": "DAS",
-        "score": 360
-    },
-    {
-        "name": "ASD",
-        "score": 360
-    },
-    {
-        "name": "SAD",
-        "score": 360
     }
 ]
