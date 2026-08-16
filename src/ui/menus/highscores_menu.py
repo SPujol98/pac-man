@@ -6,7 +6,7 @@ from src.systems.highscore import load_highscores
 
 
 class HighscoresMenu(BaseScreen):
-    """Muestra la tabla de mejores puntuaciones (Top 10)."""
+    """Display the high scores table (Top 10)."""
 
     def __init__(self,
                  screen_width: int,
@@ -27,7 +27,7 @@ class HighscoresMenu(BaseScreen):
         self.footer_font = pygame.font.SysFont("Arial", 14)
 
     def refresh_scores(self) -> None:
-        """Carga las puntuaciones actualizadas desde el almacenamiento."""
+        """Load the updated scores from storage."""
         self.scores = load_highscores(self.highscore_file)
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
@@ -39,7 +39,7 @@ class HighscoresMenu(BaseScreen):
         return GameState.HIGHSCORES
 
     def draw(self, surface: pygame.Surface) -> None:
-        """Renderiza la tabla de clasificación retro."""
+        """Render the retro leaderboard."""
         self.refresh_scores()
 
         surface.fill(self.COLOR_BG)

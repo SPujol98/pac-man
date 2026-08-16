@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Union
 def load_highscores(
         filepath: Union[str, Path] = "highscores.json"
         ) -> List[Dict[str, Any]]:
-    """Carga y ordena las mejores puntuaciones desde un archivo JSON."""
+    """Load and sort the top scores from a JSON file."""
     path = Path(filepath)
     if not path.is_file():
         return []

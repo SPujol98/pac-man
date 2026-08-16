@@ -125,29 +125,3 @@ class BaseScoreEntryScreen(BaseScreen):
     def _save_highscore(self, name: str, score: int) -> None:
         """Save the score to the scores file using highscore.py."""
         save_highscore(name=name, score=score, filepath=self.highscore_file)
-
-
-'''
-    def _save_highscore(self, name: str, score: int) -> None:
-        """The name and score remain in the Highscores JSON file."""
-        filepath = Path(self.highscore_file)
-        scores = []
-
-        if filepath.is_file():
-            try:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    scores = json.load(f)
-            except Exception as err:
-                print(f"[Warning] Could not read highscores file: {err}")
-
-        scores.append({"name": name, "score": score})
-        scores = sorted(scores,
-                        key=lambda x: x.get("score", 0),
-                        reverse=True)[:10]
-
-        try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                json.dump(scores, f, indent=4)
-            print(f"[Info] Highscore saved: {name} - {score}")
-        except Exception as err:
-            print(f"[Error] Failed to save highscore: {err}")'''
