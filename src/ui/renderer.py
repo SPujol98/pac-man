@@ -162,30 +162,61 @@ class Renderer:
             screen_x = int(off_x + (gx * tile_size))
             screen_y = int(off_y + (gy * tile_size))
 
-            sprite_key = ("frightened" if
-                          ghost.state == GhostState.FRIGHTENED
-                          else ghost.ghost_type.lower())
+            if ghost.state == GhostState.EATEN:
+                sprite_key = "eaten"
+            elif ghost.state == GhostState.FRIGHTENED:
+                sprite_key = "frightened"
+            else:
+                sprite_key = ghost.ghost_type.lower()
 
             if sprite_key in self.sprites:
                 surface.blit(self.sprites[sprite_key], (screen_x, screen_y))
             else:
-                color = (
-                    self.GHOST_COLORS["frightened"]
-                    if ghost.state == GhostState.FRIGHTENED
-                    else self.GHOST_COLORS.get(ghost.ghost_type, (255, 0, 0))
-                )
-                head_center = (screen_x + tile_size // 2,
-                               screen_y + tile_size // 3)
-                pygame.draw.circle(surface, color, head_center, tile_size // 3)
-                pygame.draw.rect(
-                    surface, color, (screen_x + 2, screen_y + tile_size
-                                     // 3, tile_size - 4, tile_size // 2))
 
-                eye_y = screen_y + tile_size // 3
-                eye_r = max(1, tile_size // 8)
-                pygame.draw.circle(
-                    surface, (255, 255, 255),
-                    (screen_x + tile_size // 3, eye_y), eye_r)
-                pygame.draw.circle(
-                    surface, (255, 255, 255),
-                    (screen_x + 2 * tile_size // 3, eye_y), eye_r)
+                if ghost.state == GhostState.EATEN:
+                    eye_y = screen_y + tile_size // 2
+                    eye_r = max(2, tile_size // 6)
+
+                    pygame.draw.circle(surface, (255, 255, 255),
+                                       (screen_x + tile_size // 3, eye_y),
+                                       eye_r)
+                    pygame.draw.circle(surface, (255, 255, 255),
+                                       (screen_x + 2 * tile_size // 3, eye_y),
+                                       eye_r)
+
+                    pupil_r = max(1, eye_r // 2)
+                    pygame.draw.circle(surface, (0, 0, 255),
+                                       (screen_x + tile_size // 3, eye_y),
+                                       pupil_r)
+                    pygame.draw.circle(surface, (0, 0, 255),
+                                       (screen_x + 2 * tile_size // 3, eye_y),
+                                       pupil_r)
+
+                else:
+                    color = (
+                        self.GHOST_COLORS["frightened"]
+                        if ghost.state == GhostState.FRIGHTENED
+                        else self.GHOST_COLORS.get(ghost.ghost_type,
+                                                   (255, 0, 0))
+                    )
+                    head_center = (screen_x + tile_size // 2,
+                                   screen_y + tile_size // 3)
+                    pygame.draw.circle(surface, color,
+                                       head_center,
+                                       tile_size // 3)
+                    pygame.draw.rect(
+                        surface,
+                        color,
+                        (screen_x + 2,
+                         screen_y + tile_size // 3,
+                         tile_size - 4, tile_size // 2)
+                        )
+
+                    eye_y = screen_y + tile_size // 3
+                    eye_r = max(1, tile_size // 8)
+                    pygame.draw.circle(surface, (255, 255, 255),
+                                       (screen_x + tile_size // 3, eye_y),
+                                       eye_r)
+                    pygame.draw.circle(surface, (255, 255, 255),
+                                       (screen_x + 2 * tile_size // 3, eye_y),
+                                       eye_r)
