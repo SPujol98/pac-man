@@ -47,10 +47,10 @@ class InstructionsMenu(BaseScreen):
 
         title_surf = self.title_font.render("HOW TO PLAY",
                                             True, self.COLOR_TITLE)
-        title_rect = title_surf.get_rect(center=(self.width // 2, 40))
+        title_rect = title_surf.get_rect(center=(self.width // 2, 35))
         surface.blit(title_surf, title_rect)
 
-        line_y = 40
+        line_y = 35
         margin_lines = 40
         pygame.draw.line(surface, self.COLOR_BORDER,
                          (margin_lines, line_y),
@@ -59,51 +59,78 @@ class InstructionsMenu(BaseScreen):
                          (title_rect.right + 20, line_y),
                          (self.width - margin_lines, line_y), 3)
 
-        controls_rect = pygame.Rect(40, 80, self.width - 80, 110)
+        controls_rect = pygame.Rect(40, 65, self.width - 80, 160)
         self._draw_card(surface, controls_rect, "CONTROLS")
 
         lbl_move = self.label_font.render("MOVE:", True, (255, 255, 255))
-        surface.blit(lbl_move, (60, 110))
-        curr_x = 130
-        curr_x += self._draw_key_badge(surface, "W A S D", curr_x, 107) + 10
-        curr_x += self._draw_key_badge(surface, "ARROWS", curr_x, 107) + 15
+        surface.blit(lbl_move, (60, 90))
+        curr_x = 160
+        curr_x += self._draw_key_badge(surface, "W A S D", curr_x, 87) + 8
+        curr_x += self._draw_key_badge(surface, "ARROWS", curr_x, 87) + 12
         surface.blit(
             self.body_font.render(
-                "Navigate Pac-Man through the maze corridors.",
+                "Navigate Pac-Man through the maze.",
                 True,
                 self.COLOR_TEXT1
             ),
-            (curr_x, 110)
+            (curr_x, 90)
         )
 
         lbl_pause = self.label_font.render("PAUSE:", True, (255, 255, 255))
-        surface.blit(lbl_pause, (60, 148))
-        curr_x = 130
-        curr_x += self._draw_key_badge(surface, "P", curr_x, 145) + 15
+        surface.blit(lbl_pause, (60, 122))
+        curr_x = 160
+        curr_x += self._draw_key_badge(surface, "P", curr_x, 119) + 12
         surface.blit(
             self.body_font.render(
-                "Pause or resume the game at any time.",
+                "Pause or resume the game.",
                 True,
                 self.COLOR_TEXT
             ),
-            (curr_x, 148)
+            (curr_x, 122)
         )
 
-        rules_rect = pygame.Rect(40, 215, self.width - 80, 310)
+        lbl_invincible = self.label_font.render("INVINCIBLE:",
+                                                True, (255, 255, 255))
+        surface.blit(lbl_invincible, (60, 154))
+        curr_x = 160
+        curr_x += self._draw_key_badge(surface, "I", curr_x, 151) + 12
+        surface.blit(
+            self.body_font.render(
+                "Become Invincible! Power Rainbow!",
+                True,
+                self.COLOR_TEXT
+            ),
+            (curr_x, 154)
+        )
+
+        lbl_next = self.label_font.render("NEXT LEVEL:", True, (255, 255, 255))
+        surface.blit(lbl_next, (60, 186))
+        curr_x = 160
+        curr_x += self._draw_key_badge(surface, "N", curr_x, 183) + 12
+        surface.blit(
+            self.body_font.render(
+                "Force current level completion.",
+                True,
+                self.COLOR_TEXT
+            ),
+            (curr_x, 186)
+        )
+
+        rules_rect = pygame.Rect(40, 240, self.width - 80, 280)
         self._draw_card(surface, rules_rect, "RULES & OBJECTIVES")
 
         rules: List[Tuple[str, str]] = [
             ("COLLECT", "Eat pacgums for points. "
                 "Super-pacgums turn ghosts blue so you can eat them."),
-            ("SURVIVE", "Avoid ghosts! if a ghost catches you, "
-             "you'll go back to the starting point and lose a life."),
+            ("SURVIVE", "Avoid ghosts! If a ghost catches you, "
+             "you'll go back to start and lose a life."),
             ("WIN LEVEL",
              "Eat all pacgums in the maze before time runs out to advance."),
             ("GAME OVER", "Losing all lives ends the game. "
              "You can record your high score!"),
         ]
 
-        start_y = 245
+        start_y = 265
         for label, text in rules:
             pygame.draw.circle(surface, self.COLOR_DOT, (65, start_y + 8), 4)
             surface.blit(
@@ -122,9 +149,9 @@ class InstructionsMenu(BaseScreen):
                 ),
                 (190, start_y)
             )
-            start_y += 38
+            start_y += 34
 
-        goal_box = pygame.Rect(60, start_y + 10, rules_rect.width - 40, 40)
+        goal_box = pygame.Rect(60, start_y + 8, rules_rect.width - 40, 36)
         pygame.draw.rect(surface, (25, 25, 45), goal_box, border_radius=6)
         pygame.draw.rect(
             surface, (0, 255, 255),
