@@ -36,7 +36,7 @@ class BaseScreen(ABC):
         """Processes native Pygame keyboard input."""
         pass
 
-    def update(self) -> None:
+    def update(self) -> Optional[GameState]:
         """Updates the screen's internal logic or animation (optional)."""
         pass
 

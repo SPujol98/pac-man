@@ -97,7 +97,8 @@ class PlayScreen(BaseScreen):
     def update(self) -> Any:
         """Update the physics and check the end of the game.
         Return GameState or None to comply with BaseScreen."""
-        dt = self.clock.tick(60) / 1000.0
+        raw_dt = self.clock.tick(60) / 1000.0
+        dt = min(raw_dt, 0.1)
 
         self.game._update(dt)
 
@@ -150,7 +151,9 @@ class PlayScreen(BaseScreen):
 
     def on_enter(self, previous_state: GameState) -> None:
         """Restart the game if we haven't just paused it."""
-        if previous_state != GameState.PAUSED:
+        if previous_state == GameState.PAUSED:
+            self.clock.tick()
+        else:
             self.reset()
 
     def draw(self, surface: pygame.Surface) -> None:

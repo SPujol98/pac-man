@@ -72,30 +72,20 @@ class App:
             self._render()
             self.clock.tick(self.fps)
         pygame.quit()
-    ''''
-    def _change_state(self, new_state: GameState) -> None:
-        """Cambia el estado actual e inyecta la puntuación
-        si es pantalla final."""
-        if new_state == GameState.QUIT:
-            self.is_running = False
-        if new_state in (GameState.GAME_OVER, GameState.WIN):
-            play_screen = self.screens.get(GameState.PLAYING)
-            target_screen = self.screens.get(new_state)
-
-            if play_screen and hasattr(target_screen, "set_final_score"):
-                final_score = getattr(play_screen, "game", None)
-                score_val = final_score.score if final_score else 0
-                target_screen.set_final_score(score_val)
-        self.state = new_state'''
 
     def _change_state(self, new_state: GameState) -> None:
         """Centralizes state changes and invokes transition hooks."""
+
+        if new_state == GameState.QUIT:
+            self.is_running = False
+            return
+
         previous_state = self.state
         self.state = new_state
 
         target_screen = self.screens.get(new_state)
 
-        if new_state in (GameState.GAME_OVER, GameState.WIN):
+        if target_screen and new_state in (GameState.GAME_OVER, GameState.WIN):
             play_screen = self.screens.get(GameState.PLAYING)
             if play_screen and hasattr(target_screen, "set_final_score"):
                 final_score = getattr(play_screen, "game", None)
@@ -153,54 +143,3 @@ class App:
 
         self.screen.blit(scaled_surface, (pos_x, pos_y))
         pygame.display.flip()
-
-    '''
-    def run(self) -> None:
-        """Main execution loop."""
-        while self.is_running:
-            self._handle_events()
-            self._update()
-            self._render()
-            self.clock.tick(self.fps)
-
-    def _change_state(self, new_state: GameState) -> None:
-        """Centraliza la transición de estados y la transferencia de datos."""
-        if new_state in (GameState.GAME_OVER, GameState.WIN):
-            play_screen = self.screens.get(GameState.PLAYING)
-            target_screen = self.screens.get(new_state)
-
-            if play_screen and hasattr(target_screen, "set_final_score"):
-                final_score = play_screen.game.score
-                target_screen.set_final_score(final_score)
-        self.state = new_state
-
-    def _handle_events(self) -> None:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.is_running = False
-
-            elif event.type == pygame.VIDEORESIZE:
-                self.real_width, self.real_height = event.w, event.h
-                self.screen = pygame.display.set_mode(
-                    (self.real_width, self.real_height), pygame.RESIZABLE
-                )
-
-            else:
-                current_screen = self.screens.get(self.state)
-                if current_screen:
-                    new_state = current_screen.handle_event(event)
-                    if new_state is None:
-                        self.is_running = False
-                    elif new_state != self.state:
-                        self._change_state(new_state)
-
-    def _update(self) -> None:
-        """Actualiza la lógica de la pantalla actual y
-        procesa cambios de estado."""
-        current_screen = self.screens.get(self.state)
-        if current_screen:
-            new_state = current_screen.update()
-            if new_state is None:
-                self.is_running = False
-            elif new_state and new_state != self.state:
-                self._change_state(new_state)'''
