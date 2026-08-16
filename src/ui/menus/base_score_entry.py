@@ -1,9 +1,8 @@
-import json
-from pathlib import Path
 from typing import Optional
 import pygame
 from src.states import GameState
 from src.ui.menus.base_screen import BaseScreen
+from src.systems.highscore import save_highscore
 
 
 class BaseScoreEntryScreen(BaseScreen):
@@ -124,6 +123,12 @@ class BaseScoreEntryScreen(BaseScreen):
         surface.blit(footer_surf, footer_rect)
 
     def _save_highscore(self, name: str, score: int) -> None:
+        """Save the score to the scores file using highscore.py."""
+        save_highscore(name=name, score=score, filepath=self.highscore_file)
+
+
+'''
+    def _save_highscore(self, name: str, score: int) -> None:
         """The name and score remain in the Highscores JSON file."""
         filepath = Path(self.highscore_file)
         scores = []
@@ -145,4 +150,4 @@ class BaseScoreEntryScreen(BaseScreen):
                 json.dump(scores, f, indent=4)
             print(f"[Info] Highscore saved: {name} - {score}")
         except Exception as err:
-            print(f"[Error] Failed to save highscore: {err}")
+            print(f"[Error] Failed to save highscore: {err}")'''
