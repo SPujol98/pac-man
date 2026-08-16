@@ -72,7 +72,7 @@ class App:
             self._render()
             self.clock.tick(self.fps)
         pygame.quit()
-
+    ''''
     def _change_state(self, new_state: GameState) -> None:
         """Cambia el estado actual e inyecta la puntuación
         si es pantalla final."""
@@ -86,7 +86,24 @@ class App:
                 final_score = getattr(play_screen, "game", None)
                 score_val = final_score.score if final_score else 0
                 target_screen.set_final_score(score_val)
+        self.state = new_state'''
+
+    def _change_state(self, new_state: GameState) -> None:
+        """Centralizes state changes and invokes transition hooks."""
+        previous_state = self.state
         self.state = new_state
+
+        target_screen = self.screens.get(new_state)
+
+        if new_state in (GameState.GAME_OVER, GameState.WIN):
+            play_screen = self.screens.get(GameState.PLAYING)
+            if play_screen and hasattr(target_screen, "set_final_score"):
+                final_score = getattr(play_screen, "game", None)
+                score_val = final_score.score if final_score else 0
+                target_screen.set_final_score(score_val)
+
+        if target_screen:
+            target_screen.on_enter(previous_state)
 
     def _handle_events(self) -> None:
         for event in pygame.event.get():

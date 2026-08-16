@@ -45,6 +45,11 @@ class BaseScreen(ABC):
         """Draw the graphic content on the indicated surface."""
         pass
 
+    def on_enter(self, previous_state: GameState) -> None:
+        """Optional hook that runs every time the screen
+        changes to this one."""
+        pass
+
     def _draw_key_badge(self,
                         surface: pygame.Surface,
                         text: str,

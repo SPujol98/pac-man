@@ -4,6 +4,10 @@
         "score": 1920
     },
     {
+        "name": "MUNDO",
+        "score": 1590
+    },
+    {
         "name": "WIN",
         "score": 1390
     },
@@ -34,9 +38,5 @@
     {
         "name": "ASDA",
         "score": 700
-    },
-    {
-        "name": "DAS",
-        "score": 360
     }
 ]

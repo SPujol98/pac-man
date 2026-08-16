@@ -21,6 +21,7 @@ class PlayScreen(BaseScreen):
                  config_or_data: Any = None) -> None:
         super().__init__(screen_width, screen_height)
 
+        self.config = config_or_data
         self.clock = pygame.time.Clock()
         self.current_level_index: int = 0
 
@@ -132,6 +133,25 @@ class PlayScreen(BaseScreen):
                     return state
         state_playing: GameState = GameState.PLAYING
         return state_playing
+
+    def reset(self) -> None:
+        """Reset the level, score, and lives."""
+        (self.grid, self.lives, self.pacgum_pts, self.superpacgum_pts,
+         self.ghost_pts, self.time_limit) = self._parse_config(self.config)
+
+        self.level = Level(
+            grid=self.grid,
+            pacgum_points=self.pacgum_pts,
+            superpacgum_points=self.superpacgum_pts,
+            ghost_points=self.ghost_pts,
+            time_left=self.time_limit
+        )
+        self.game = Game(level=self.level, lives=self.lives)
+
+    def on_enter(self, previous_state: GameState) -> None:
+        """Restart the game if we haven't just paused it."""
+        if previous_state != GameState.PAUSED:
+            self.reset()
 
     def draw(self, surface: pygame.Surface) -> None:
         """Full delegation of painting to the Renderer and HUD."""
