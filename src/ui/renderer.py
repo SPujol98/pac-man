@@ -140,7 +140,8 @@ class Renderer:
         screen_y = int(off_y + (py * tile_size))
 
         if "player" in self.sprites:
-            angle = self.ROTATIONS.get(player.direction or Direction.RIGHT, 0)
+            angle = self.ROTATIONS.get(player.direction or
+                                       player.facing_direction, 0)
             rotated = pygame.transform.rotate(self.sprites["player"], angle)
             surface.blit(rotated, (screen_x, screen_y))
         else:

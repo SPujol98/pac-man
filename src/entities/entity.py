@@ -82,6 +82,10 @@ class MovingEntity(Entity):
     def get_current_speed(self, player: Optional["Player"] = None) -> float:
         return self.speed
 
+    def reset_state(self) -> None:
+        self.progress = 0.0
+        self.direction = None
+
 
 class Collectible(Entity):
     """Base class for items the player can eat for points.

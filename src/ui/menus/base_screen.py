@@ -8,6 +8,7 @@ class BaseScreen(ABC):
     """A common interface and customizable graphical tools for any display."""
 
     COLOR_BG = (10, 10, 15)
+    COLOR_LABEL = (160, 160, 170)
     COLOR_TEXT = (255, 255, 255)
     COLOR_TEXT1 = (220, 220, 220)
     COLOR_TITLE = (255, 255, 0)

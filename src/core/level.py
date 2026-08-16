@@ -58,6 +58,9 @@ class Level:
         """Return True if all collectibles have been eaten."""
         return len(self.collectibles) == 0
 
+    def force_complete(self) -> None:
+        self.collectibles.clear()
+
     def _get_closest_walkable_cell(self, target_x: int,
                                    target_y: int) -> tuple[int, int]:
         """Find and return the nearest walkable cell to the given coordinates.

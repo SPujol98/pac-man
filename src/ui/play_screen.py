@@ -1,8 +1,10 @@
 from typing import Any, List, Optional, Tuple
 import pygame
+import random
 
 from src.core.game import Game
 from src.core.level import Level
+from src.core.progression import GameProgression
 from src.level_manager.maze_loader import load_maze
 from src.states import GameState
 from src.ui.hud import HUD
@@ -25,21 +27,24 @@ class PlayScreen(BaseScreen):
         self.input_handler = InputHandler()
         self.hud = HUD(screen_width, screen_height)
         self.renderer = Renderer(screen_width, screen_height)
+        self.w, self.h = 0, 0
 
-        grid, lives, pacgum_pts, superpacgum_pts, ghost_pts, time_limit = (
+        (self.grid, self.lives, self.pacgum_pts, self.superpacgum_pts,
+         self.ghost_pts, self.time_limit) = (
             self._parse_config(config_or_data))
 
         self.level = Level(
-            grid=grid,
-            pacgum_points=pacgum_pts,
-            superpacgum_points=superpacgum_pts,
-            ghost_points=ghost_pts,
-            time_left=time_limit
+            grid=self.grid,
+            pacgum_points=self.pacgum_pts,
+            superpacgum_points=self.superpacgum_pts,
+            ghost_points=self.ghost_pts,
+            time_left=self.time_limit
         )
-        self.game = Game(level=self.level, lives=lives)
+        self.game = Game(level=self.level, lives=self.lives)
+        self.game_progression = GameProgression()
 
-        cols = len(grid[0]) if grid else 1
-        rows = len(grid) if grid else 1
+        cols = len(self.grid[0]) if self.grid else 1
+        rows = len(self.grid) if self.grid else 1
         tile_size, _, _ = self.renderer.get_layout(cols, rows)
         self.renderer.load_sprites_for_tile_size(tile_size)
 
@@ -57,17 +62,16 @@ class PlayScreen(BaseScreen):
             levels = config_or_data.get("level", [])
             if levels and self.current_level_index < len(levels):
                 lvl_cfg = levels[self.current_level_index]
-                w, h = lvl_cfg["width"], lvl_cfg["height"]
+                self.w, self.h = lvl_cfg["width"], lvl_cfg["height"]
             else:
-                w, h = 21, 21
+                self.w, self.h = 21, 21
             try:
-                maze_data = load_maze(width=w, height=h, seed=seed)
-                grid = maze_data.grid
+                maze_data = load_maze(width=self.w, height=self.h, seed=seed)
+                self.grid = maze_data.grid
             except Exception as err:
                 print(f"[Warning] No se pudo generar el laberinto: {err}")
-                grid = self._get_default_grid()
-
-            return (grid, lives, pacgum_pts, superpacgum_pts,
+                self.grid = self._get_default_grid()
+            return (self.grid, lives, pacgum_pts, superpacgum_pts,
                     ghost_points, time_limit)
         return self._get_default_grid(), 3, 10, 50, 200, 90.0
 
@@ -76,6 +80,12 @@ class PlayScreen(BaseScreen):
         if event.type == pygame.KEYDOWN and event.key in (pygame.K_p,
                                                           pygame.K_ESCAPE):
             return GameState.PAUSED
+
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_i:
+            self.game.player.invincible_switch()
+
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_n:
+            self.game.level.force_complete()
 
         requested_dir = self.input_handler.process_event(event)
         if requested_dir is not None:
@@ -95,8 +105,31 @@ class PlayScreen(BaseScreen):
                 state: GameState = GameState.GAME_OVER
                 return state
             elif self.game.level.is_completed():
-                state = GameState.WIN
-                return state
+                if self.game_progression.next_level():
+                    saved_score = self.game.score
+                    saved_lives = self.game.lives
+                    try:
+                        maze_data = load_maze(width=self.w,
+                                              height=self.h,
+                                              seed=random.randint(1, 1000000))
+                        self.grid = maze_data.grid
+                        self.level = Level(
+                            grid=self.grid,
+                            pacgum_points=self.pacgum_pts,
+                            superpacgum_points=self.superpacgum_pts,
+                            ghost_points=self.ghost_pts,
+                            time_left=self.time_limit
+                        )
+                        self.game = Game(level=self.level, lives=saved_lives,
+                                         score=saved_score)
+                        self.current_level_index += 1
+                    except Exception as err:
+                        print("[Warning] No se pudo generar "
+                              f"el laberinto: {err}")
+                        self.grid = self._get_default_grid()
+                else:
+                    state = GameState.WIN
+                    return state
         state_playing: GameState = GameState.PLAYING
         return state_playing
 
@@ -123,7 +156,8 @@ class PlayScreen(BaseScreen):
             score=self.game.score,
             lives=self.game.lives,
             level=self.current_level_index + 1,
-            time_remaining=int(self.game.level.time_left)
+            time_remaining=int(self.game.level.time_left),
+            invincible=self.game.player.is_invincible
         )
 
     def _get_default_grid(self) -> List[List[int]]:

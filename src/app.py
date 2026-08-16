@@ -71,10 +71,13 @@ class App:
             self._update()
             self._render()
             self.clock.tick(self.fps)
+        pygame.quit()
 
     def _change_state(self, new_state: GameState) -> None:
         """Cambia el estado actual e inyecta la puntuación
         si es pantalla final."""
+        if new_state == GameState.QUIT:
+            self.is_running = False
         if new_state in (GameState.GAME_OVER, GameState.WIN):
             play_screen = self.screens.get(GameState.PLAYING)
             target_screen = self.screens.get(new_state)
@@ -107,10 +110,11 @@ class App:
                         self._change_state(new_state)
 
     def _update(self) -> None:
-
         current_screen = self.screens.get(self.state)
         if current_screen:
-            current_screen.update()
+            new_state = current_screen.update()
+            if new_state and new_state != self.state:
+                self._change_state(new_state)
 
     def _render(self) -> None:
         self.virtual_screen.fill((0, 0, 0))

@@ -44,7 +44,7 @@ class PauseMenu(BaseScreen):
                 elif selected == "Main Menu":
                     return GameState.MENU
                 elif selected == "Exit":
-                    return None
+                    return GameState.QUIT
 
         return GameState.PAUSED
 

@@ -47,8 +47,7 @@ class MainMenu(BaseScreen):
                 elif selected_option == "Instructions":
                     return GameState.INSTRUCTIONS
                 elif selected_option == "Exit":
-                    return None
-
+                    return GameState.QUIT
         return GameState.MENU
 
     def draw(self, surface: pygame.Surface) -> None:
