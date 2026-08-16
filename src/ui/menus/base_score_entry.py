@@ -57,8 +57,8 @@ class BaseScoreEntryScreen(BaseScreen):
 
             else:
                 if len(self.player_name) < self.max_name_length:
-                    char = event.unicode.upper()
-                    if char.isalnum() or char in (" ", "-", "_"):
+                    char = event.unicode
+                    if char.isalnum() or char == " ":
                         self.player_name += char
 
         return None

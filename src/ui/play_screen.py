@@ -148,6 +148,7 @@ class PlayScreen(BaseScreen):
             time_left=self.time_limit
         )
         self.game = Game(level=self.level, lives=self.lives)
+        self.current_level_index = 0
 
     def on_enter(self, previous_state: GameState) -> None:
         """Restart the game if we haven't just paused it."""
