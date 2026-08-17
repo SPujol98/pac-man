@@ -1,10 +1,22 @@
 import argparse
 import sys
+import signal
+
+from typing import Any
 from src.app import App
 from src.systems.config_parser import load_config
 
 
+def handle_sigquit(signum: int, frame: Any) -> None:
+    print("\n[Info] Game interrupted by user (Ctrl+\\). "
+          "Exiting gracefully...")
+    _safe_pygame_quit()
+    sys.exit(0)
+
+
 def main() -> None:
+    if hasattr(signal, 'SIGQUIT'):
+        signal.signal(signal.SIGQUIT, handle_sigquit)
     parser = argparse.ArgumentParser(description="Pac-Man 42")
 
     parser.add_argument(

@@ -30,12 +30,13 @@ class PlayScreen(BaseScreen):
         self.renderer = Renderer(screen_width, screen_height)
         self.w, self.h = 0, 0
 
-        (self.grid, self.lives, self.pacgum_pts, self.superpacgum_pts,
-         self.ghost_pts, self.time_limit) = (
+        (self.grid, self.lives, self.pacgum_quantity, self.pacgum_pts,
+         self.superpacgum_pts, self.ghost_pts, self.time_limit) = (
             self._parse_config(config_or_data))
 
         self.level = Level(
             grid=self.grid,
+            pacgum_quantity=self.pacgum_quantity,
             pacgum_points=self.pacgum_pts,
             superpacgum_points=self.superpacgum_pts,
             ghost_points=self.ghost_pts,
@@ -50,11 +51,12 @@ class PlayScreen(BaseScreen):
         self.renderer.load_sprites_for_tile_size(tile_size)
 
     def _parse_config(self, config_or_data: Any) -> Tuple[
-         List[List[int]], int, int, int, int, float]:
+         List[List[int]], int, int, int, int, int, float]:
         """Retrieve the array and parameters, assuming that
         config_parser has already parsed the JSON."""
         if isinstance(config_or_data, dict):
             lives = config_or_data.get("lives", 3)
+            pacgum_quantity = self.config.get("pacgum", 42)
             pacgum_pts = config_or_data.get("points_per_pacgum", 10)
             superpacgum_pts = config_or_data.get("points_per_super_pacgum", 50)
             time_limit = float(config_or_data.get("level_max_time", 90))
@@ -65,16 +67,17 @@ class PlayScreen(BaseScreen):
                 lvl_cfg = levels[self.current_level_index]
                 self.w, self.h = lvl_cfg["width"], lvl_cfg["height"]
             else:
+                print("Hola")
                 self.w, self.h = 21, 21
             try:
                 maze_data = load_maze(width=self.w, height=self.h, seed=seed)
                 self.grid = maze_data.grid
             except Exception as err:
-                print(f"[Warning] No se pudo generar el laberinto: {err}")
-                self.grid = self._get_default_grid()
-            return (self.grid, lives, pacgum_pts, superpacgum_pts,
-                    ghost_points, time_limit)
-        return self._get_default_grid(), 3, 10, 50, 200, 90.0
+                raise ValueError("[Warning] No se pudo generar "
+                                 f"el laberinto: {err}")
+            return (self.grid, lives, pacgum_quantity, pacgum_pts,
+                    superpacgum_pts, ghost_points, time_limit)
+        raise ValueError("[Warning] No se pudo generar el Maze")
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Manages the player's pause and controls."""
@@ -117,6 +120,7 @@ class PlayScreen(BaseScreen):
                         self.grid = maze_data.grid
                         self.level = Level(
                             grid=self.grid,
+                            pacgum_quantity=self.pacgum_quantity,
                             pacgum_points=self.pacgum_pts,
                             superpacgum_points=self.superpacgum_pts,
                             ghost_points=self.ghost_pts,
@@ -126,9 +130,8 @@ class PlayScreen(BaseScreen):
                                          score=saved_score)
                         self.current_level_index += 1
                     except Exception as err:
-                        print("[Warning] No se pudo generar "
+                        raise ValueError("[Warning] No se pudo generar "
                               f"el laberinto: {err}")
-                        self.grid = self._get_default_grid()
                 else:
                     state = GameState.WIN
                     return state
@@ -137,11 +140,13 @@ class PlayScreen(BaseScreen):
 
     def reset(self) -> None:
         """Reset the level, score, and lives."""
-        (self.grid, self.lives, self.pacgum_pts, self.superpacgum_pts,
-         self.ghost_pts, self.time_limit) = self._parse_config(self.config)
+        (self.grid, self.lives, self.pacgum_quantity, self.pacgum_pts,
+         self.superpacgum_pts, self.ghost_pts,
+         self.time_limit) = self._parse_config(self.config)
 
         self.level = Level(
             grid=self.grid,
+            pacgum_quantity=self.pacgum_quantity,
             pacgum_points=self.pacgum_pts,
             superpacgum_points=self.superpacgum_pts,
             ghost_points=self.ghost_pts,
@@ -183,16 +188,3 @@ class PlayScreen(BaseScreen):
             time_remaining=int(self.game.level.time_left),
             invincible=self.game.player.is_invincible
         )
-
-    def _get_default_grid(self) -> List[List[int]]:
-        """Fail-safe grid."""
-        return [
-            [15] * 19,
-            [15] + [0] * 17 + [15],
-            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15,
-             0, 15, 15, 0, 15],
-            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15,
-             0, 15, 15, 0, 15],
-            [15] + [0] * 17 + [15],
-            [15] * 19,
-        ]

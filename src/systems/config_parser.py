@@ -31,10 +31,10 @@ class GameConfig(BaseModel):
     highscore_filename: str = Field(default="highscores.json", min_length=1)
     level: List[LevelConfig] = Field(default_factory=lambda: [LevelConfig()])
     lives: int = Field(default=3, gt=0, le=8)
-    pacgum: int = Field(default=42, ge=0, le=99999)
+    pacgum: int = Field(default=42, gt=0, le=99999)
     points_per_pacgum: int = Field(default=10, ge=1, le=100)
     points_per_super_pacgum: int = Field(default=50, ge=2, le=1000)
-    points_per_ghost: int = Field(default=200, gt=50, le=1000)
+    points_per_ghost: int = Field(default=200, ge=50, le=1000)
     seed: int = Field(default=42, gt=0)
     level_max_time: int = Field(default=90, ge=80, le=600)
 

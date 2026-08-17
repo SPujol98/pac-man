@@ -1,12 +1,14 @@
+import sys
+
 from dataclasses import dataclass
 from typing import List, Tuple
+
 try:
     import mazegenerator
-    _MAZEGEN_AVAILABLE = True
-except ImportError as err:
-    print(f"[Warning] The external library could not be imported: {err}. "
-          "Fallback maps will be used.")
-    _MAZEGEN_AVAILABLE = False
+except ImportError:
+    print("[FATAL] The mazegenerator could not be imported.")
+    sys.exit(0)
+
 
 WALL_NORTH = 1
 WALL_EAST = 2
@@ -51,34 +53,6 @@ def is_wall_present(cell_value: int, wall_flag: int) -> bool:
     return (cell_value & wall_flag) != 0
 
 
-def _generate_fallback_maze(width: int, height: int) -> MazeData:
-    """Generate a safe default map (an empty room with borders)."""
-    w = max(5, width)
-    h = max(5, height)
-
-    grid = [[0 for _ in range(w)] for _ in range(h)]
-    for y in range(h):
-        for x in range(w):
-            val = 0
-            if y == 0:
-                val |= WALL_NORTH
-            if y == h - 1:
-                val |= WALL_SOUTH
-            if x == 0:
-                val |= WALL_WEST
-            if x == w - 1:
-                val |= WALL_EAST
-            grid[y][x] = val
-
-    return MazeData(
-        grid=grid,
-        width=w,
-        height=h,
-        entry=(1, 1),
-        exit=(w - 2, h - 2),
-    )
-
-
 def load_maze(
     width: int = 21,
     height: int = 21,
@@ -96,11 +70,7 @@ def load_maze(
         safe_h = min(max(5, int(height)), 45)
         safe_seed = int(seed)
     except (ValueError, TypeError):
-        print("[Warning] Invalid arguments in load_maze. Using fallback.")
-        return _generate_fallback_maze(21, 21)
-
-    if not _MAZEGEN_AVAILABLE:
-        return _generate_fallback_maze(safe_w, safe_h)
+        raise ValueError("[Warning] Invalid arguments in load_maze.")
 
     try:
         generator = mazegenerator.MazeGenerator(
@@ -118,9 +88,7 @@ def load_maze(
             len(raw_maze) != safe_h or
             len(raw_maze[0]) != safe_w
         ):
-            print("[Warning] MazeGenerator returned an invalid/empty grid. "
-                  "Using fallback.")
-            return _generate_fallback_maze(safe_w, safe_h)
+            print("[Warning] MazeGenerator returned an invalid/empty grid.")
 
         return MazeData(
             grid=raw_maze,
@@ -129,8 +97,5 @@ def load_maze(
             entry=generator.maze_entry,
             exit=generator.maze_exit,
         )
-
-    except Exception as err:
-        print(f"[Warning] Internal error in MazeGenerator: {err}. "
-              "Using fallback.")
-        return _generate_fallback_maze(safe_w, safe_h)
+    except Exception:
+        raise ValueError("[Warning] Internal error in MazeGenerator.")
