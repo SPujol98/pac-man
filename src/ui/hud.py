@@ -2,10 +2,22 @@ import pygame
 
 
 class HUD:
-    """Displays the score, lives, level, and time remaining
-    while maintaining the arcade-style look."""
+    """Renders and manages the top Heads-Up Display (HUD) bar
+    in an arcade style.
+
+    Displays real-time gameplay indicators including current score,
+    remaining level time, active level number, and player lives represented
+    by procedural Pac-Man icons.
+    """
 
     def __init__(self, screen_width: int, screen_height: int) -> None:
+        """Initializes the HUD layout dimensions, font assets,
+        and visual color palette.
+
+        Args:
+            screen_width: Width of the display surface in pixels.
+            screen_height: Height of the display surface in pixels.
+        """
         self.width = screen_width
         self.height = screen_height
         self.hud_height = 45
@@ -30,8 +42,22 @@ class HUD:
 
     def _draw_life_icon(self, surface: pygame.Surface, x: int,
                         is_invincible: bool, y: int, radius: int = 7) -> None:
-        """Draw a procedural Pac-Man icon with its mouth
-        open to represent the lives."""
+        """Draws a single procedural Pac-Man icon representing
+        an available life.
+
+        Renders a circle with a cut-out wedge polygon to simulate an
+        open mouth, applying either standard yellow or dynamic
+        invincibility coloring.
+
+        Args:
+            surface: The Pygame target surface to draw onto.
+            x: The horizontal center position of the icon in pixels.
+            is_invincible: Flag indicating whether to apply a
+                           cycling rainbow color.
+            y: The vertical center position of the icon in pixels.
+            radius: Radius of the Pac-Man icon circle in pixels.
+                    Defaults to 7.
+        """
         if is_invincible:
             pygame.draw.circle(surface, self.get_invincible_color(),
                                (x, y), radius)
@@ -54,7 +80,20 @@ class HUD:
         time_remaining: int,
         invincible: bool
     ) -> None:
-        """Renders the top bar of the HUD with stylized indicators."""
+        """Renders the complete top HUD bar with all stats, labels, and icons.
+
+        Divides the top bar into 4 distinct sections
+        (Score, Time, Level, Lives) and draws text textures and life icons
+        onto the target surface.
+
+        Args:
+            surface: The main Pygame display surface to draw onto.
+            score: Current player score value.
+            lives: Number of remaining player lives.
+            level: Active level sequence number.
+            time_remaining: Remaining level time in seconds.
+            invincible: Whether player invincibility mode is currently active.
+        """
 
         hud_rect = pygame.Rect(0, 0, self.width, self.hud_height)
         pygame.draw.rect(surface, self.COLOR_BG, hud_rect)
@@ -112,6 +151,14 @@ class HUD:
             )
 
     def get_invincible_color(self) -> tuple[int, int, int]:
+        """Generates a dynamic cycling RGB color using current
+        ticks for invincibility feedback. Converts a hue angle derived
+        from elapsed milliseconds into an RGB tuple.
+
+        Returns:
+            tuple[int, int, int]: An (R, G, B) tuple representing
+            the active rainbow color.
+        """
         current_time = pygame.time.get_ticks()
         hue = (current_time * 2) % 360
         color = pygame.Color(0, 0, 0)
