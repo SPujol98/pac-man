@@ -45,6 +45,10 @@ class PlayScreen(BaseScreen):
         self.game = Game(level=self.level, lives=self.lives)
         self.game_progression = GameProgression()
 
+        self._update_renderer_layout()
+
+    def _update_renderer_layout(self) -> None:
+        """Recalculates tile size and reloads sprites based on current grid."""
         cols = len(self.grid[0]) if self.grid else 1
         rows = len(self.grid) if self.grid else 1
         tile_size, _, _ = self.renderer.get_layout(cols, rows)
@@ -63,14 +67,17 @@ class PlayScreen(BaseScreen):
             seed = config_or_data.get("seed", 42)
             ghost_points = config_or_data.get("points_per_ghost", 200)
             levels = config_or_data.get("level", [])
-            if levels and self.current_level_index < len(levels):
-                lvl_cfg = levels[self.current_level_index]
+
+            if levels:
+                idx = min(self.current_level_index, len(levels) - 1)
+                lvl_cfg = levels[idx]
                 self.w, self.h = lvl_cfg["width"], lvl_cfg["height"]
             else:
-                print("Hola")
                 self.w, self.h = 21, 21
+
             try:
-                maze_data = load_maze(width=self.w, height=self.h, seed=seed)
+                current_seed = seed if self.current_level_index == 0 else random.randint(1, 1000000)
+                maze_data = load_maze(width=self.w, height=self.h, seed=current_seed)
                 self.grid = maze_data.grid
             except Exception as err:
                 raise ValueError("[Warning] No se pudo generar "
@@ -98,8 +105,7 @@ class PlayScreen(BaseScreen):
         return GameState.PLAYING
 
     def update(self) -> Any:
-        """Update the physics and check the end of the game.
-        Return GameState or None to comply with BaseScreen."""
+        """Update the physics and check the end of the game."""
         raw_dt = self.clock.tick(60) / 1000.0
         dt = min(raw_dt, 0.1)
 
@@ -113,11 +119,10 @@ class PlayScreen(BaseScreen):
                 if self.game_progression.next_level():
                     saved_score = self.game.score
                     saved_lives = self.game.lives
+                    self.current_level_index += 1
+
                     try:
-                        maze_data = load_maze(width=self.w,
-                                              height=self.h,
-                                              seed=random.randint(1, 1000000))
-                        self.grid = maze_data.grid
+                        (self.grid, _, _, _, _, _, _) = self._parse_config(self.config)
                         self.level = Level(
                             grid=self.grid,
                             pacgum_quantity=self.pacgum_quantity,
@@ -128,7 +133,7 @@ class PlayScreen(BaseScreen):
                         )
                         self.game = Game(level=self.level, lives=saved_lives,
                                          score=saved_score)
-                        self.current_level_index += 1
+                        self._update_renderer_layout()
                     except Exception as err:
                         raise ValueError("[Warning] No se pudo generar "
                               f"el laberinto: {err}")
@@ -139,7 +144,12 @@ class PlayScreen(BaseScreen):
         return state_playing
 
     def reset(self) -> None:
-        """Reset the level, score, and lives."""
+        """Reset the level, score, lives, and progression from scratch."""
+ 
+        self.current_level_index = 0
+        self.game_progression = GameProgression()
+
+
         (self.grid, self.lives, self.pacgum_quantity, self.pacgum_pts,
          self.superpacgum_pts, self.ghost_pts,
          self.time_limit) = self._parse_config(self.config)
@@ -153,7 +163,7 @@ class PlayScreen(BaseScreen):
             time_left=self.time_limit
         )
         self.game = Game(level=self.level, lives=self.lives)
-        self.current_level_index = 0
+        self._update_renderer_layout()
 
     def on_enter(self, previous_state: GameState) -> None:
         """Restart the game if we haven't just paused it."""
