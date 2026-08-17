@@ -53,29 +53,23 @@ class MovingEntity(Entity):
     def update(self, dt: float, level: "Level",
                player: Optional["Player"] = None) -> None:
         if self.direction is None:
-            # Attempt to start moving if we were stationary
             self.direction = self._choose_direction(level, player)
             if self.direction is None:
                 return
 
-        # Advance a percentage of the cell based on speed and time
         self.progress += self.get_current_speed(player) * dt
 
-        # If we reach 1.0, we have crossed to the center of the next cell
         if self.progress >= 1.0:
             self.cell = (self.cell[0] + self.direction.dx,
                          self.cell[1] + self.direction.dy)
 
-            # Determine where to go next
             next_dir = self._choose_direction(level, player)
 
             if next_dir is None:
-                # If there is a wall, stop completely and stay in the cell
                 self.direction = None
                 self.progress = 0.0
             else:
-                # If we can continue, save the new direction and
-                # retain the excess progress to maintain smooth movement
+
                 self.direction = next_dir
                 self.progress -= 1.0
 

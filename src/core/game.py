@@ -14,6 +14,8 @@ class Game:
 
     def __init__(self, level: Level, lives: int,
                  score: Optional[int] = 0) -> None:
+        """Initialize the game simulation, internal timers,
+        and spawn all entities."""
         self.level = level
         self.is_running: bool = True
         self.score: int = score if score is not None else 0

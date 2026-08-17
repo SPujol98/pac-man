@@ -36,6 +36,8 @@ class Level:
                  superpacgum_points: int,
                  ghost_points: int,
                  time_left: float = 90.0) -> None:
+        """Initialize the maze grid, calculate spawn points,
+        and populate collectibles."""
         self.grid = grid
         self.pacgum_quantity = pacgum_quantity
         self.ghost_points = ghost_points
@@ -64,6 +66,7 @@ class Level:
         return len(self.collectibles) == 0
 
     def force_complete(self) -> None:
+        """Clear all remaining collectibles to forcefully end the level."""
         self.collectibles.clear()
 
     def _get_closest_walkable_cell(self, target_x: int,
