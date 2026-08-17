@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import random
+
 from typing import TYPE_CHECKING
 from src.states import Direction
 from src.entities.collectibles import Pacgum, SuperPacgum
@@ -28,11 +31,13 @@ class Level:
     }
 
     def __init__(self, grid: list[list[int]],
+                 pacgum_quantity: int,
                  pacgum_points: int,
                  superpacgum_points: int,
                  ghost_points: int,
                  time_left: float = 90.0) -> None:
         self.grid = grid
+        self.pacgum_quantity = pacgum_quantity
         self.ghost_points = ghost_points
         self.time_left = time_left
         self.ghost_points = ghost_points
@@ -117,9 +122,14 @@ class Level:
 
         blacklist = ([self.player_spawn] + self.superpacgum_spawns +
                      self.ghost_spawns)
+        available_positions: list[tuple[int, int]] = []
         for y in range(len(self.grid)):
             for x in range(len(self.grid[y])):
                 if self.grid[y][x] == 15:
                     continue
                 if (x, y) not in blacklist:
-                    self.collectibles.append(Pacgum((x, y), pacgum_points))
+                    available_positions.append((x, y))
+        safe_quantity = min(self.pacgum_quantity, len(available_positions))
+        chosen_positions = random.sample(available_positions, safe_quantity)
+        for i in chosen_positions:
+            self.collectibles.append(Pacgum((i), pacgum_points))
