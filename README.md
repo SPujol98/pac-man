@@ -227,7 +227,6 @@ The bridge between the two halves is the **entity contract** in `states.py`: eve
 pacman/
 ├── pac-man.py                          # Entry point (exactly 1 arg: the config file)
 ├── config.json                         # Example configuration
-├── highscores.json                     # Persisted Top 10
 ├── mazegenerator-00001-py3-none-any.whl # Assigned A-Maze-ing build, installed via `make install`
 ├── Makefile                            # install / run / debug / test / clean / lint
 ├── pyproject.toml                      # Dependencies
