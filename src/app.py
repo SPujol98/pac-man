@@ -15,7 +15,20 @@ from src.level_manager.maze_loader import load_maze
 
 
 class App:
+    """Main application manager and state machine coordinator.
+
+    Handles Pygame subsystem initialization, resizable window configuration,
+    virtual surface scaling, global event dispatching, and transitions
+    between active game screens.
+    """
     def __init__(self, config: dict[str, Any]):
+        """Initializes Pygame display, window settings, virtual canvas,
+        and screen registry.
+
+        Args:
+            config: Configuration dictionary containing window, maze layout,
+            and gameplay settings.
+        """
         pygame.init()
         pygame.font.init()
         self.config = config
@@ -65,7 +78,12 @@ class App:
         }
 
     def run(self) -> None:
-        """Main execution loop."""
+        """Executes the core application loop until execution is terminated.
+
+        Continuously dispatches event handling, frame updates,
+        surface rendering, and frame rate capping, followed by clean Pygame
+        module shutdown upon exit.
+        """
         while self.is_running:
             self._handle_events()
             self._update()
@@ -74,7 +92,16 @@ class App:
         pygame.quit()
 
     def _change_state(self, new_state: GameState) -> None:
-        """Centralizes state changes and invokes transition hooks."""
+        """Centralizes state machine transitions and invokes screen
+        lifecycle callbacks.
+
+        Passes final scores to terminal game screens (GAME_OVER / WIN)
+        when transitioning out of gameplay, and triggers the `on_enter`
+        hook on the newly activated screen.
+
+        Args:
+            new_state: The target `GameState` to transition into.
+        """
 
         if new_state == GameState.QUIT:
             self.is_running = False
@@ -96,6 +123,12 @@ class App:
             target_screen.on_enter(previous_state)
 
     def _handle_events(self) -> None:
+        """Processes global system inputs and delegates user inputs
+        to the active screen.
+
+        Handles application quit and window resizing events directly,
+        while passing user control events to the active screen handler.
+        """
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.is_running = False
@@ -117,6 +150,11 @@ class App:
                         self._change_state(new_state)
 
     def _update(self) -> None:
+        """Updates internal logic and state mechanics for the active screen.
+
+        Triggers state transitions if requested by the active screen
+        during its update cycle.
+        """
         current_screen = self.screens.get(self.state)
         if current_screen:
             new_state = current_screen.update()
@@ -124,6 +162,13 @@ class App:
                 self._change_state(new_state)
 
     def _render(self) -> None:
+        """Renders the active screen onto the virtual surface and
+        scales it to the window.
+
+        Draws screen elements onto a fixed-resolution virtual canvas (800x600),
+        applies aspect-ratio scaling, and centers (letterboxes)
+        the output within the resizable display window.
+        """
         self.virtual_screen.fill((0, 0, 0))
 
         current_screen = self.screens.get(self.state)
