@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import List, Tuple
 
 try:
-    import mazegenerator  # pyright: ignore[reportMissingTypeStubs]
+    import mazegenerator
 except ImportError:
     print("[FATAL] The mazegenerator could not be imported.")
     sys.exit(0)
