@@ -67,16 +67,17 @@ class PlayScreen(BaseScreen):
                 lvl_cfg = levels[self.current_level_index]
                 self.w, self.h = lvl_cfg["width"], lvl_cfg["height"]
             else:
+                print("Hola")
                 self.w, self.h = 21, 21
             try:
                 maze_data = load_maze(width=self.w, height=self.h, seed=seed)
                 self.grid = maze_data.grid
             except Exception as err:
-                print(f"[Warning] No se pudo generar el laberinto: {err}")
-                self.grid = self._get_default_grid()
+                raise ValueError("[Warning] No se pudo generar "
+                                 f"el laberinto: {err}")
             return (self.grid, lives, pacgum_quantity, pacgum_pts,
                     superpacgum_pts, ghost_points, time_limit)
-        return self._get_default_grid(), 3, 42, 10, 50, 200, 90.0
+        raise ValueError("[Warning] No se pudo generar el Maze")
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
         """Manages the player's pause and controls."""
@@ -129,9 +130,8 @@ class PlayScreen(BaseScreen):
                                          score=saved_score)
                         self.current_level_index += 1
                     except Exception as err:
-                        print("[Warning] No se pudo generar "
+                        raise ValueError("[Warning] No se pudo generar "
                               f"el laberinto: {err}")
-                        self.grid = self._get_default_grid()
                 else:
                     state = GameState.WIN
                     return state
@@ -188,16 +188,3 @@ class PlayScreen(BaseScreen):
             time_remaining=int(self.game.level.time_left),
             invincible=self.game.player.is_invincible
         )
-
-    def _get_default_grid(self) -> List[List[int]]:
-        """Fail-safe grid."""
-        return [
-            [15] * 19,
-            [15] + [0] * 17 + [15],
-            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15,
-             0, 15, 15, 0, 15],
-            [15, 0, 15, 15, 0, 15, 15, 15, 0, 15, 0, 15, 15, 15,
-             0, 15, 15, 0, 15],
-            [15] + [0] * 17 + [15],
-            [15] * 19,
-        ]

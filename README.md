@@ -168,6 +168,33 @@ Losing a life resets more than just the player: `Game._update()` also resets eve
 
 There's no separate cheat module — cheat behavior is a handful of flags checked directly where they matter. `Player` carries an `is_invincible` flag that short-circuits the life-loss branch in `Game._update()`: a ghost colliding with the player is a normal FSM transition either way, but the life is only spent if the flag is off. The rest of the cheat set (level skip, ghost freeze, extra lives) follows the same pattern — a state check inline in `Game` or `Player` rather than a dedicated system, kept deliberately simple since the whole point is helping a reviewer test features fast, not building a second control layer.
 
+### UI Architecture & Programmer B Overview
+
+Base Screen & Polymorphism (base_screen.py): An abstract BaseScreen class enforces standard methods (handle_input(), update(), draw()). All screens inherit from it, enabling the main game loop to update and render active screens polymorphically.
+
+Menu Hierarchy (menus/): Manages user navigation across the Main Menu, Pause Menu, Instructions, High Scores, and End Screens (Game Over/Victory with score entry inheritance).
+
+In-Game Interface & Rendering:
+    
+* play_screen.py: Coordinates active gameplay state, combining the map, entities, and UI overlay.
+* hud.py: Displays real-time game telemetry (score, remaining lives, timer, and level).
+* renderer.py: Encapsulates drawing primitives to decouple graphic calls from core logic.
+* input_handler.py: Centralizes event polling and maps user keystrokes to actions.
+
+
+### Systems & Data Persistence (src/systems/)
+
+The systems package handles external data loading, configuration parsing, and local data persistence, enforcing a zero-crash policy for external file operations:
+
+* config_parser.py (Resilient Config Parser):
+
+    Comment Preprocessing: Strips # lines before JSON parsing.
+    Self-Healing Validation: Uses Pydantic to replace individual invalid or out-of-bounds fields with safe defaults while preserving valid keys—guaranteeing zero crashes from bad config files.
+
+* highscore.py (High Score Management):
+
+    Top 10 Storage: Manages score persistence (highscores.json) with strict guards (1–10 char names, non-negative integer scores).
+    Anti-Tampering Resilience: Purges corrupted or hand-edited JSON files and resets to a clean table to prevent UI crashes.
 ---
 
 ## General Software Architecture
@@ -200,7 +227,6 @@ The bridge between the two halves is the **entity contract** in `states.py`: eve
 pacman/
 ├── pac-man.py                          # Entry point (exactly 1 arg: the config file)
 ├── config.json                         # Example configuration
-├── highscores.json                     # Persisted Top 10
 ├── mazegenerator-00001-py3-none-any.whl # Assigned A-Maze-ing build, installed via `make install`
 ├── Makefile                            # install / run / debug / test / clean / lint
 ├── pyproject.toml                      # Dependencies
@@ -231,8 +257,8 @@ pacman/
     │   └── maze_loader.py              # Adapter for the external A-Maze-ing wheel
     │
     ├── systems/
-    │   ├── config_parser.py            # JSON + comments, defaults, clamping
-    │   └── highscore.py                # Persistent Top 10
+    │   ├── config_parser.py            # Self-healing JSON configuration parser
+    │   └── highscore.py                # Top 10 persistence & anti-tampering validation
     │
     └── ui/
         ├── renderer.py                 # Draws the model, never mutates it
@@ -240,13 +266,13 @@ pacman/
         ├── hud.py                      # Score, lives, level, time remaining
         ├── input_handler.py            # Keys → intentions
         └── menus/                      # One screen per file
-            ├── base_screen.py
-            ├── base_score_entry.py
-            ├── main_menu.py
-            ├── pause_menu.py
-            ├── highscores_menu.py
-            ├── instructions_menu.py
-            └── end_screens.py
+            ├── base_screen.py          # Abstract base class for all screens
+            ├── base_score_entry.py     # Polymorphic database for entering scores
+            ├── main_menu.py            # main menu
+            ├── pause_menu.py           # pause menu
+            ├── highscores_menu.py      # High Scores Table
+            ├── instructions_menu.py    # Controls/Instructions Screen
+            └── end_screens.py          # Game Over / Victory Screens
 ```
 
 ---
