@@ -83,7 +83,8 @@ class Game:
                 if item.sprite_id == "superpacgum":
                     self.frightened_timer = 8.0
                     for gh in self.ghosts:
-                        gh.state = GhostState.FRIGHTENED
+                        if gh.state != GhostState.EATEN:
+                            gh.state = GhostState.FRIGHTENED
         if self.level.is_completed():
             pass
         if (self.level.is_completed() or

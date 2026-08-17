@@ -27,7 +27,7 @@ class Ghost(MovingEntity):
         self.scatter_corner = scatter_corner
         self.points = points
         self.spawn_pos = cell
-        self.respawn_timer: float = 7.0
+        self.respawn_timer: float = random.randint(5, 10)
 
     def _choose_direction(
             self, level: Level,
@@ -111,13 +111,13 @@ class Ghost(MovingEntity):
             case GhostState.SCATTER:
                 return self.speed
             case GhostState.EATEN:
-                return self.speed * 2
+                return self.speed * 1.5
 
     def update(self, dt: float, level: "Level",
                player: Optional["Player"] = None) -> None:
         super().update(dt, level, player)
         if self.state == GhostState.EATEN:
             self.respawn_timer -= dt
-            if self.respawn_timer <= 0.0 and self.cell == self.spawn_pos:
+            if self.respawn_timer <= 0.0:
                 self.state = GhostState.SCATTER
-                self.respawn_timer = 7.0
+                self.respawn_timer = random.randint(5, 10)
