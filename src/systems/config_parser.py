@@ -74,9 +74,14 @@ class GameConfig(BaseModel):
     @field_validator("highscore_filename")
     @classmethod
     def validate_highscore_filename(cls, v: str) -> str:
-        if "/" in v or "\\" in v or Path(v).parent != Path("."):
+        FORBIDDEN_CHARS = set(r'/\:*?"<>|' + "\n\r\t\0")
+        has_invalid_chars = any(c in FORBIDDEN_CHARS for c in v) or any(
+            ord(c) < 32 for c in v
+        )
+        is_directory_path = Path(v).name != v or Path(v).parent != Path(".")
+        if has_invalid_chars or is_directory_path:
             print(
-                f"[Warning] Invalid path in highscore filename '{v}'. "
+                f"[Warning] Invalid highscore filename {repr(v)}. "
                 "Defaulting to 'highscores.json'."
             )
             return "highscores.json"
