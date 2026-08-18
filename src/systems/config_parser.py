@@ -65,7 +65,7 @@ def strip_comments(text: str) -> str:
     """
     pattern = r'("(?:\\.|[^"\\])*")|/\*[\s\S]*?\*/|(?:#|//).*'
 
-    def _replace(match: re.Match) -> str:
+    def _replace(match: re.Match[str]) -> str:
         if match.group(1) is not None:
             return match.group(1)
         return ""

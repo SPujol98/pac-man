@@ -4,10 +4,14 @@ import subprocess
 import sys
 
 
-def build_game():
+def build_game() -> None:
     print("=== Pac-Man 42 Build Script ===")
 
-    subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=True)
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "pyinstaller"],
+        check=True)
+    subprocess.run([sys.executable, "-m", "pip", "install",
+                    "mazegenerator-00001-py3-none-any.whl"], check=True)
 
     dist_dir = "dist"
     build_dir = "build"
@@ -25,7 +29,8 @@ def build_game():
         "--onedir",
         "--windowed",
         "--name=PacMan42",
-        f"--add-data=config.json{sep}."
+        "--collect-all=mazegenerator",
+        f"--add-data=config.json{sep}.",
         f"--add-data=src{sep}src",
         f"--add-data=INSTRUCTIONS.txt{sep}.",
         "pac-man.py"

@@ -1,8 +1,9 @@
 import argparse
-import sys
+import os
 import signal
-
+import sys
 from typing import Any
+
 from src.app import App
 from src.systems.config_parser import load_config
 
@@ -14,6 +15,16 @@ def handle_sigquit(signum: int, frame: Any) -> None:
     sys.exit(0)
 
 
+def get_resource_path(relative_path: str) -> str:
+    """Get the file path both during development and within
+    the PyInstaller package."""
+    if hasattr(sys, '_MEIPASS'):
+        bundled_path = os.path.join(sys._MEIPASS, relative_path)
+        if os.path.exists(bundled_path):
+            return bundled_path
+    return relative_path
+
+
 def main() -> None:
     if hasattr(signal, 'SIGQUIT'):
         signal.signal(signal.SIGQUIT, handle_sigquit)
@@ -21,10 +32,15 @@ def main() -> None:
 
     parser.add_argument(
         'config_path',
-        help='Path to the JSON configuration file'
+        nargs='?',
+        default='config.json',
+        help='Path to the JSON configuration file (default: config.json)'
     )
     args = parser.parse_args()
-    if not args.config_path.lower().endswith('.json'):
+
+    config_file = get_resource_path(args.config_path)
+
+    if not config_file.lower().endswith('.json'):
         print(
             f"Error: Invalid file '{args.config_path}'. "
             "Must be a .json file.",
@@ -32,7 +48,7 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        config = load_config(args.config_path)
+        config = load_config(config_file)
         print("Starting Pac-Man 42...")
         app = App(config)
         app.run()
