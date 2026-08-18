@@ -232,9 +232,8 @@ pacman/
 ├── pyproject.toml                      # Dependencies
 ├── uv.lock
 │
-├── project_management/                 # pending
-├── packaging/                          # pending — PyInstaller/Steam-Itch.io build
-├── tests/                              # pending — pytest suite
+├── project_management/
+├── packaging/                          # PyInstaller/Steam-Itch.io build
 │
 └── src/
     ├── app.py                          # Main loop, dt, application-level FSM
