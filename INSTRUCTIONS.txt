@@ -1,0 +1,39 @@
+==================================================
+              PAC-MAN 42 - GAME MANUAL
+==================================================
+
+1. HOW TO RUN THE GAME
+--------------------------------------------------
+A. Executable / Packaged Build (No Python required):
+   • Double-click the executable or run via terminal:
+     ./PacMan42 [config.json]
+
+B. Running from Source Code:
+   • Using Makefile (Recommended):
+     make install
+     make run
+
+   • Using Python directly:
+     python3 pac-man.py config.json
+
+   • Using UV (if installed):
+     uv run python3 pac-man.py config.json
+
+2. CONTROLS
+--------------------------------------------------
+  • Move:            WASD or Arrow Keys
+  • Pause/Resume:    P or Spacebar
+  • Toggle Invincible (Cheat): I
+  • Toggle NEXT LEVEL: N
+  • Quit Game:       ESC or Close Window
+
+3. CONFIGURATION
+--------------------------------------------------
+  • The game reads settings from 'config.json' in
+    the executable directory.
+  • You can modify lives, speed, and scoring parameters.
+  • Lines starting with '#' are treated as comments.
+
+4. HIGH SCORES
+--------------------------------------------------
+  • Scores are automatically saved to 'highscores.json'.
