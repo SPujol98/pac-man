@@ -19,10 +19,10 @@ class ConfigError(Exception):
 
 class LevelConfig(BaseModel):
     """Individual settings for each level of the game."""
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="forbid")
 
-    width: int = Field(default=21, ge=5, le=100)
-    height: int = Field(default=21, ge=5, le=100)
+    width: int = Field(ge=5, le=100)
+    height: int = Field(ge=5, le=100)
 
 
 class GameConfig(BaseModel):
@@ -30,7 +30,9 @@ class GameConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     highscore_filename: str = Field(default="highscores.json", min_length=1)
-    level: List[LevelConfig] = Field(default_factory=lambda: [LevelConfig()])
+    level: List[LevelConfig] = Field(
+        default_factory=lambda: [LevelConfig(width=21, height=21)],
+        min_length=1,)
     lives: int = Field(default=3, gt=0, le=8)
     pacgum: int = Field(default=42, gt=0, le=99999)
     points_per_pacgum: int = Field(default=10, ge=1, le=100)
