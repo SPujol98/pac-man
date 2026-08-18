@@ -59,23 +59,37 @@ class App:
         self.maze_data = load_maze(width=width, height=height, seed=seed)
         self.state = GameState.MENU
         self.is_running = True
+        self.highscore_file: str = ""
+        self._highscore_file(self.config.get("highscore_filename"))
 
         self.screens: dict[GameState, BaseScreen] = {
             GameState.MENU: MainMenu(self.VIRTUAL_WIDTH, self.VIRTUAL_HEIGHT),
             GameState.INSTRUCTIONS: InstructionsMenu(self.VIRTUAL_WIDTH,
                                                      self.VIRTUAL_HEIGHT),
             GameState.HIGHSCORES: HighscoresMenu(self.VIRTUAL_WIDTH,
-                                                 self.VIRTUAL_HEIGHT),
+                                                 self.VIRTUAL_HEIGHT,
+                                                 self.highscore_file),
             GameState.PLAYING: PlayScreen(self.VIRTUAL_WIDTH,
                                           self.VIRTUAL_HEIGHT,
-                                          self.config),
+                                          self.highscore_file),
             GameState.PAUSED: PauseMenu(self.VIRTUAL_WIDTH,
                                         self.VIRTUAL_HEIGHT),
             GameState.GAME_OVER: GameOverScreen(self.VIRTUAL_WIDTH,
-                                                self.VIRTUAL_HEIGHT),
+                                                self.VIRTUAL_HEIGHT,
+                                                self.highscore_file),
             GameState.WIN: WinScreen(self.VIRTUAL_WIDTH,
-                                     self.VIRTUAL_HEIGHT),
+                                     self.VIRTUAL_HEIGHT,
+                                     self.highscore_file),
         }
+
+    def _highscore_file(self, highscore_file: str) -> None:
+        if "." in highscore_file:
+            if not highscore_file.endswith(".json"):
+                self.highscore_file = "highscores.json"
+                print("[ERROR] The highscore file was corrupted")
+            self.highscore_file = highscore_file
+        else:
+            self.highscore_file = highscore_file + ".json"
 
     def run(self) -> None:
         """Executes the core application loop until execution is terminated.
