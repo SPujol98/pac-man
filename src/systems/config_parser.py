@@ -9,6 +9,7 @@ from pydantic import (
     Field,
     ValidationError,
     model_validator,
+    field_validator
 )
 
 
@@ -59,6 +60,37 @@ class GameConfig(BaseModel):
                 print(f"[Warning] Missing key '{key}'. "
                       "A safe default will be applied.")
         return data
+
+    @field_validator("highscore_filename")
+    @classmethod
+    def validate_no_path_in_highscore(cls, v: str) -> str:
+        path = Path(v)
+        if "/" in v or "\\" in v or path.parent != Path("."):
+            print(f"[Warning] 'highscore_filename' cannot be a path ({v}). "
+                  "Defaulting to 'highscores.json'.")
+            return "highscores.json"
+        return v
+
+    @field_validator("highscore_filename")
+    @classmethod
+    def validate_highscore_filename(cls, v: str) -> str:
+        if "/" in v or "\\" in v or Path(v).parent != Path("."):
+            print(
+                f"[Warning] Invalid path in highscore filename '{v}'. "
+                "Defaulting to 'highscores.json'."
+            )
+            return "highscores.json"
+
+        if "." in v:
+            if not v.endswith(".json"):
+                print(
+                    "[ERROR] The highscore file was corrupted or"
+                    "invalid format. Defaulting to 'highscores.json'."
+                )
+                return "highscores.json"
+            return v
+
+        return f"{v}.json"
 
 
 def strip_comments(text: str) -> str:

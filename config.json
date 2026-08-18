@@ -1,5 +1,5 @@
 {
-    "highscore_filename": "oscar.json",
+    "highscore_filename": "highscores.json",
     "lives": 3,
     "pacgum": 50,
     "points_per_pacgum": 20,
