@@ -25,8 +25,8 @@ def build_game():
         "--onedir",
         "--windowed",
         "--name=PacMan42",
+        f"--add-data=config.json{sep}."
         f"--add-data=src{sep}src",
-        f"--add-data=assets{sep}assets",
         f"--add-data=INSTRUCTIONS.txt{sep}.",
         "pac-man.py"
     ]
