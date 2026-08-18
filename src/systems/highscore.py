@@ -56,7 +56,7 @@ def load_highscores(
             if isinstance(data, list):
                 valid_entries = [
                     {
-                        "name": item["name"],
+                        "name": item["name"].upper(),
                         "score": item["score"],
                     }
                     for item in data if _is_valid_entry(item)
