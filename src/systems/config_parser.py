@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 from typing import Any, Dict, List, Union
 
 from pydantic import (
@@ -58,6 +59,20 @@ class GameConfig(BaseModel):
         return data
 
 
+def strip_comments(text: str) -> str:
+    """Strips '#', '//', and '/* ... */' comments from a string,
+    preserving comment characters inside double-quoted string literals.
+    """
+    pattern = r'("(?:\\.|[^"\\])*")|/\*[\s\S]*?\*/|(?:#|//).*'
+
+    def _replace(match: re.Match) -> str:
+        if match.group(1) is not None:
+            return match.group(1)
+        return ""
+
+    return re.sub(pattern, _replace, text)
+
+
 def load_config(filepath: Union[str, Path]) -> Dict[str, Any]:
     """Load the configuration in a fault-tolerant manner using self-healing."""
     path = Path(filepath)
@@ -69,7 +84,10 @@ def load_config(filepath: Union[str, Path]) -> Dict[str, Any]:
     else:
         try:
             with open(path, "r", encoding="utf-8") as f:
-                raw_json = json.load(f)
+                content = f.read()
+
+            cleaned_content = strip_comments(content)
+            raw_json = json.loads(cleaned_content)
         except OSError as err:
             print(f"[Warning] I/O error while reading '{filepath}': "
                   f"{err}. Safe defaults will be applied.")
