@@ -72,7 +72,7 @@ class App:
                                                  self.highscore_file),
             GameState.PLAYING: PlayScreen(self.VIRTUAL_WIDTH,
                                           self.VIRTUAL_HEIGHT,
-                                          self.highscore_file),
+                                          self.config),
             GameState.PAUSED: PauseMenu(self.VIRTUAL_WIDTH,
                                         self.VIRTUAL_HEIGHT),
             GameState.GAME_OVER: GameOverScreen(self.VIRTUAL_WIDTH,

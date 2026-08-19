@@ -60,7 +60,7 @@ class GameConfig(BaseModel):
                 print(f"[Warning] Missing key '{key}'. "
                       "A safe default will be applied.")
         return data
-
+    '''
     @field_validator("highscore_filename")
     @classmethod
     def validate_no_path_in_highscore(cls, v: str) -> str:
@@ -69,7 +69,7 @@ class GameConfig(BaseModel):
             print(f"[Warning] 'highscore_filename' cannot be a path ({v}). "
                   "Defaulting to 'highscores.json'.")
             return "highscores.json"
-        return v
+        return v'''
 
     @field_validator("highscore_filename")
     @classmethod
@@ -96,6 +96,20 @@ class GameConfig(BaseModel):
             return v
 
         return f"{v}.json"
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def filter_valid_levels(cls, levels: Any) -> Any:
+        if not isinstance(levels, list):
+            return levels
+
+        valid_levels = []
+        for item in levels:
+            try:
+                valid_levels.append(LevelConfig.model_validate(item))
+            except ValidationError:
+                print(f"[Warning] Discarding invalid level entry: {item}")
+        return valid_levels if valid_levels else None
 
 
 def strip_comments(text: str) -> str:
