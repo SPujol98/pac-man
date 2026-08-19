@@ -22,8 +22,8 @@ class LevelConfig(BaseModel):
     """Individual settings for each level of the game."""
     model_config = ConfigDict(extra="forbid")
 
-    width: int = Field(ge=5, le=100)
-    height: int = Field(ge=5, le=100)
+    width: int = Field(ge=5, le=45)
+    height: int = Field(ge=5, le=45)
 
 
 class GameConfig(BaseModel):
@@ -78,6 +78,7 @@ class GameConfig(BaseModel):
     @field_validator("highscore_filename")
     @classmethod
     def validate_highscore_filename(cls, v: str) -> str:
+        v = v.strip()
         FORBIDDEN_CHARS = set(r'/\:*?"<>|' + "\n\r\t\0")
         has_invalid_chars = any(c in FORBIDDEN_CHARS for c in v) or any(
             ord(c) < 32 for c in v
@@ -94,11 +95,10 @@ class GameConfig(BaseModel):
             if not v.endswith(".json"):
                 print(
                     "[ERROR] The highscore file was corrupted or"
-                    "invalid format. Defaulting to 'highscores.json'."
+                    " invalid format. Defaulting to 'highscores.json'."
                 )
                 return "highscores.json"
             return v
-
         return f"{v}.json"
 
 
