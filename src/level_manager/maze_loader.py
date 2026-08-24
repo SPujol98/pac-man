@@ -18,16 +18,7 @@ WALL_WEST = 8
 
 @dataclass(frozen=True)
 class MazeData:
-    """Data structure that passes the processed maze to the game engine.
-
-    Attributes:
-        grid: A 2D array of integers where each cell is a bitmask
-            representing walls.
-        width: Width in cells.
-        height: Height in cells.
-        entry: Coordinates (col, row) of the entrance.
-        exit: Coordinates (col, row) of the exit.
-    """
+    """Immutable processed maze handed to the game engine."""
 
     grid: List[List[int]]
     width: int
@@ -37,19 +28,7 @@ class MazeData:
 
 
 def is_wall_present(cell_value: int, wall_flag: int) -> bool:
-    """Engine helper: Indicates whether there is a wall in a given direction.
-
-    In MazeGenerator, bits represent walls. If the bit is set (1),
-    there is a wall. If a bitwise NOT (~) was applied, the path is open.
-
-    Args:
-        cell_value: Integer value of the cell in the grid array.
-        wall_flag: WALL_NORTH, WALL_EAST, WALL_SOUTH, or WALL_WEST.
-
-    Returns:
-        True if there is a wall in that direction,
-        False if the corridor is open.
-    """
+    """Return whether a cell's bitmask declares a wall in a direction."""
     return (cell_value & wall_flag) != 0
 
 
@@ -58,13 +37,7 @@ def load_maze(
     height: int = 21,
     seed: int = 42,
 ) -> MazeData:
-    """Loads and generates a maze using the external MazeGenerator.
-
-    Sets 'perfect = False' to ensure there are loops in the corridors.
-    If the external library fails or cannot be found, it returns a default map.
-        Clamp dimensions: min 5 to prevent indexing errors, max 45 to prevent
-        DFS RecursionError in the external library
-    """
+    """Generate a maze via the external package, clamping dimensions."""
     try:
         safe_w = min(max(5, int(width)), 45)
         safe_h = min(max(5, int(height)), 45)

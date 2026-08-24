@@ -12,12 +12,13 @@ class GameOverScreen(BaseScoreEntryScreen):
             screen_width=screen_width,
             screen_height=screen_height,
             title="GAME OVER",
-            title_color=(230, 40, 40),
+            title_color=(255, 46, 99),
             subtitle="Better luck next time!",
             highscore_file=highscore_file
         )
 
     def handle_event(self, event: pygame.event.Event) -> GameState:
+        """Delegate to the base handler, defaulting to this same state."""
         next_state = super().handle_event(event)
         return next_state or GameState.GAME_OVER
 
@@ -31,11 +32,12 @@ class WinScreen(BaseScoreEntryScreen):
             screen_width=screen_width,
             screen_height=screen_height,
             title="VICTORY!",
-            title_color=(50, 230, 80),
+            title_color=(57, 255, 178),
             subtitle="Congratulations! You cleared the maze!",
             highscore_file=highscore_file
         )
 
     def handle_event(self, event: pygame.event.Event) -> GameState:
+        """Delegate to the base handler, defaulting to this same state."""
         next_state = super().handle_event(event)
         return next_state or GameState.WIN

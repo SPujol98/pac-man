@@ -30,8 +30,7 @@ class Direction(Enum):
         self.dy = dy
 
     def opposite(self) -> "Direction":
-        """Returns the opposite direction to prevent
-        ghosts from turning back."""
+        """Return the opposite direction (ghosts can't turn back)."""
         match self:
             case Direction.UP:
                 return Direction.DOWN

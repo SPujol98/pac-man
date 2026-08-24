@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import abstractmethod
 from src.entities.entity import MovingEntity
 from src.states import Direction, GhostState
 from typing import Optional, TYPE_CHECKING
@@ -12,11 +13,8 @@ if TYPE_CHECKING:
 
 
 class Ghost(MovingEntity):
-    """Base class for enemy ghosts.
+    """Base ghost class; subclasses define their chase personality."""
 
-    Attributes:
-        state: Current AI behavior state.
-    """
     def __init__(self, cell: tuple[int, int], ghost_type: str, speed: float,
                  scatter_corner: tuple[int, int],
                  points: int,
@@ -28,6 +26,12 @@ class Ghost(MovingEntity):
         self.points = points
         self.spawn_pos = cell
         self.respawn_timer: float = random.randint(5, 10)
+
+    @abstractmethod
+    def _get_chase_target(self, level: Level,
+                          player: Player) -> tuple[int, int]:
+        """Return the cell this ghost aims at during CHASE."""
+        ...
 
     def _choose_direction(
             self, level: Level,
@@ -73,33 +77,6 @@ class Ghost(MovingEntity):
                 (self.direction.opposite() if self.direction else
                  Direction.RIGHT))
 
-    def _get_chase_target(self, level: Level,
-                          player: Player) -> tuple[int, int]:
-        """Calculate the target cell during CHASE mode.
-        Needs to be overwrite by the specific subclass of every ghost.
-        """
-        match self.ghost_type:
-            case "blinky":
-                return player.cell
-            case "pinky":
-                if player.direction is None:
-                    return player.cell
-                return (player.cell[0] + player.direction.dx * 4,
-                        player.cell[1] + player.direction.dy * 4)
-            case "inky":
-                if player.direction is None:
-                    return player.cell
-                return (player.cell[0] + player.direction.dx * 2,
-                        player.cell[1] + player.direction.dy * 2)
-            case "clyde":
-                dist_sq = ((self.cell[0] - player.cell[0]) ** 2 +
-                           (self.cell[1] - player.cell[1]) ** 2)
-                if dist_sq > 64:
-                    return player.cell
-                return self.scatter_corner
-            case _:
-                return player.cell
-
     def get_current_speed(self, player: Optional["Player"] = None) -> float:
         match self.state:
             case GhostState.CHASE:
@@ -121,3 +98,69 @@ class Ghost(MovingEntity):
             if self.respawn_timer <= 0.0:
                 self.state = GhostState.SCATTER
                 self.respawn_timer = random.randint(5, 10)
+
+
+class BlinkyGhost(Ghost):
+    """Red ghost: chases the player's current cell directly."""
+
+    def __init__(self, cell: tuple[int, int], speed: float,
+                 scatter_corner: tuple[int, int], points: int,
+                 direction: Optional[Direction] = None) -> None:
+        super().__init__(cell, "blinky", speed, scatter_corner, points,
+                         direction)
+
+    def _get_chase_target(self, level: Level,
+                          player: Player) -> tuple[int, int]:
+        return player.cell
+
+
+class PinkyGhost(Ghost):
+    """Pink ghost: ambushes four cells ahead of the player."""
+
+    def __init__(self, cell: tuple[int, int], speed: float,
+                 scatter_corner: tuple[int, int], points: int,
+                 direction: Optional[Direction] = None) -> None:
+        super().__init__(cell, "pinky", speed, scatter_corner, points,
+                         direction)
+
+    def _get_chase_target(self, level: Level,
+                          player: Player) -> tuple[int, int]:
+        if player.direction is None:
+            return player.cell
+        return (player.cell[0] + player.direction.dx * 4,
+                player.cell[1] + player.direction.dy * 4)
+
+
+class InkyGhost(Ghost):
+    """Cyan ghost: targets two cells ahead of the player."""
+
+    def __init__(self, cell: tuple[int, int], speed: float,
+                 scatter_corner: tuple[int, int], points: int,
+                 direction: Optional[Direction] = None) -> None:
+        super().__init__(cell, "inky", speed, scatter_corner, points,
+                         direction)
+
+    def _get_chase_target(self, level: Level,
+                          player: Player) -> tuple[int, int]:
+        if player.direction is None:
+            return player.cell
+        return (player.cell[0] + player.direction.dx * 2,
+                player.cell[1] + player.direction.dy * 2)
+
+
+class ClydeGhost(Ghost):
+    """Orange ghost: chases when far away, retreats to its corner up close."""
+
+    def __init__(self, cell: tuple[int, int], speed: float,
+                 scatter_corner: tuple[int, int], points: int,
+                 direction: Optional[Direction] = None) -> None:
+        super().__init__(cell, "clyde", speed, scatter_corner, points,
+                         direction)
+
+    def _get_chase_target(self, level: Level,
+                          player: Player) -> tuple[int, int]:
+        dist_sq = ((self.cell[0] - player.cell[0]) ** 2 +
+                   (self.cell[1] - player.cell[1]) ** 2)
+        if dist_sq > 64:
+            return player.cell
+        return self.scatter_corner

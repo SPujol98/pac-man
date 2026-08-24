@@ -1,94 +1,122 @@
 *This project has been created as part of the 42 curriculum by spujol-s, sasanche.*
 
-# 🟡 Pac-Man
+# Pac-Man 42
+
+A from-scratch Pac-Man clone where every ghost hunts you differently, mazes are never the same twice, and nothing — not a corrupted config, not a hand-edited highscore file — can crash the game.
 
 ![Language](https://img.shields.io/badge/Language-Python-blue)
-![Engine](https://img.shields.io/badge/Engine-Pygame-green)
+![Engine](https://img.shields.io/badge/Engine-Pygame--CE-green)
 ![Typing](https://img.shields.io/badge/mypy-strict-informational)
+![Architecture](https://img.shields.io/badge/architecture-MVC-purple)
+
+![Gameplay](assets/demo.gif)
 
 ---
 
-## Description
+## Overview
 
-A from-scratch clone of the 1980 arcade Pac-Man, built as a two-person project around a strict MVC split: one person owns everything that happens in the game world (movement rules, collisions, ghost AI, level progression), the other owns everything about how it's shown and stored (rendering, menus, config parsing, highscores). The only thing shared between the two sides is a fixed entity contract, agreed on day one, so both halves got built in parallel without stepping on each other.
+The classic 1980 arcade game rebuilt in Python with a twist on how the work itself was organized: a two-person project split along the model/view boundary, where the only thing agreed on before writing any code was a fixed **entity contract** (`cell`, `px`/`py`, `direction`, `sprite_id`) in `src/states.py`. The simulation (`core/`, `entities/`) was built and tested as plain Python with zero Pygame imports while the UI, menus, config parsing and highscores were built in parallel on the other side of that contract.
 
-The game loop runs on delta time rather than fixed ticks, movement uses a hybrid pixel/grid model (entities move continuously in pixels but only decide where to turn once aligned to a grid cell), and mazes come from the external `A-Maze-ing` package instead of hand-authored maps. There are 10+ levels — level 1 uses a fixed seed for reproducible testing, the rest are randomized.
+Beyond faithful gameplay — buffered turns, ghost personalities, frightened-mode waves — the hard requirement driving half the design decisions was **zero tracebacks**: no malformed config, tampered highscore file, or maze-generator failure may ever produce a stack trace.
 
 ---
 
-## Instructions
+## Ghost AI
 
-### Requirements
+Each ghost inherits from an abstract `Ghost` base and defines its personality by implementing exactly one method — `_get_chase_target()`. Everything else (grid movement, direction choice by distance heuristic, respawn timers, speed per state) lives in the base class.
 
-- Python 3.10+
-- [`uv`](https://github.com/astral-sh/uv)
-- Pygame (installed automatically via `uv sync`)
+| | Ghost | Personality | Chase target |
+|:---|:---|:---|:---|
+| ![Blinky](assets/blinky.png) | **Blinky** | Shadow | Pac-Man's exact cell — pure pursuit |
+| ![Pinky](assets/pinky.png) | **Pinky** | Ambusher | 4 cells ahead of Pac-Man's facing direction |
+| ![Inky](assets/inky.png) | **Inky** | wildcard | 2 cells ahead — cuts off escape routes |
+| ![Clyde](assets/clyde.png) | **Clyde** | shy | Chases when far, retreats to its corner within 8 cells |
 
-### Install
+Ghosts run a 4-state FSM (`CHASE / SCATTER / FRIGHTENED / EATEN`) on top of a shared wave timer: the level starts in `SCATTER` (7s), flips to `CHASE` (15s), and keeps alternating. A super-pacgum interrupts the wave — every ghost switches to `FRIGHTENED` for 8s, counted down independently, and each reverts to whatever the global state became in the meantime. When eaten, a ghost doesn't return to a central house: it heads back to **its own corner spawn** and respawns there after 5–10s.
 
-```bash
-make install
+Movement decisions only happen at cell-aligned intersections, and ghosts never reverse direction — matching the original arcade behavior.
+
+---
+
+## Architecture
+
+```
+pac-man.py ──► App (window, dt, application FSM, CRT overlay)
+                    │
+                    ▼
+             states.py — GameState + the entity contract
+                    │ (the only file both programmers had to agree on)
+        ┌───────────┴────────────┐
+        ▼                        ▼
+  core/ + entities/        ui/ + systems/ + level_manager/
+  simulation, zero Pygame  rendering, menus, persistence
+  (plain Python, testable) (reads the model, never mutates it)
 ```
 
-Runs `uv sync` to install project dependencies, then installs the assigned maze generator (`mazegenerator-00001-py3-none-any.whl`) as a local wheel — it's not published on PyPI, so `UV_SKIP_WHEEL_FILENAME_CHECK=1` is needed to get `uv pip install` to accept a non-standard wheel filename.
+| Module | Responsibility |
+|:---|:---|
+| `core/game.py` | World state and `update(dt)`: wave/frightened timers, ghost collisions, eating, end conditions |
+| `core/level.py` | Grid, spawns, collectible placement, level timer, win condition |
+| `core/progression.py` | Level sequence (10 levels), persistent score/lives across levels |
+| `entities/` | `Entity` → `MovingEntity` → `Player` / `Ghost` → `BlinkyGhost`, `PinkyGhost`, `InkyGhost`, `ClydeGhost` |
+| `ui/play_screen.py` | In-game orchestration: input → simulation → renderer + HUD |
+| `ui/renderer.py` | Neon maze (cached glow surface), sprites, collectible animation |
+| `ui/menus/` | One file per screen, all inheriting `BaseScreen` (abstract `handle_event/update/draw`) |
+| `ui/sprites.py` | Cached sprite bank + procedural chomp-frame generation |
+| `systems/config_parser.py` | Self-healing Pydantic config loader |
+| `systems/highscore.py` | Top-10 persistence with anti-tampering validation |
+| `level_manager/maze_loader.py` | Adapter for the external A-Maze-ing generator |
 
-### Run
+---
 
-```bash
-make run
-```
+## Key Technical Decisions
 
-or directly:
+**Hybrid grid/pixel movement** — entities track a logical cell for decisions and a continuous `progress` (0.0–1.0) for rendering. All hard logic (collisions, AI, eating) reasons over the discrete grid; the screen shows smooth per-pixel motion. Chasing the same invariant in continuous coordinates would have made collision detection a floating-point nightmare.
 
-```bash
-uv run python3 pac-man.py config.json
-```
+**Delta time, clamped** — `dt = min(clock.tick(60) / 1000.0, 0.05)`. The clamp is not optional: without it, one lag spike produces an oversized `dt` that can tunnel an entity through a wall in a single frame.
 
-`pac-man.py` expects exactly one argument: the path to a `.json` config file. Anything else (missing file, wrong extension, malformed argument) is handled without a traceback.
+**Input buffering** — a direction pressed before an intersection is queued and applied the moment it becomes legal. This is what makes controls feel responsive instead of frame-perfect, matching the arcade original.
 
-### Debug
+**Maze walls as a bitmask** — each grid cell stores 4 wall bits (N/E/S/W). Traversability is one `&` operation, and the wall bitmask doubles as the rendering contract with the maze generator package.
 
-```bash
-make debug
-```
+**Self-healing config** — a Pydantic model validates every field with bounds; invalid values are discarded key-by-key (with a warning) and rebuilt from defaults instead of failing the whole file. A missing file, non-dict root, or corrupted JSON all land on safe defaults. There is no input path from config to traceback.
 
-Runs the game under `pdb` (`uv run python3 -m pdb pac-man.py`).
+**Highscores that survive tampering** — every entry is validated on load (non-negative int score, 1–10 alphanumeric name). If the file is hand-edited into something invalid, the loader deletes it and returns an empty table rather than crashing the highscore screen — "never crash" won over "recover what we can".
 
-### Test
+**Fixed seed for level 1** — level 1 always uses seed 42 (configurable), so demos and testing are reproducible; levels 2+ are randomized. No two playthroughs past the first look the same.
 
-```bash
-make test
-```
+---
 
-Runs `uv run python -m pytest -v -s -o pythonpath=. tests/`. Not graded, but kept as a sanity check during development — this suite is still being built out.
+## Visuals
 
-### Lint
+Neon/synthwave restyling on top of classic Pac-Man sprites:
 
-```bash
-make lint         # flake8 + mypy (--warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs)
-make lint-strict  # flake8 + mypy --strict
-```
+- **Glowing maze** — walls drawn with layered alpha passes, pre-rendered once per level onto a cached surface. The glow costs nothing per frame; it's a single blit.
+- **Animated chomp** — Pac-Man's mouth frames (closed/mid/wide) are generated at runtime from the original sprite by polar-coordinate pixel analysis: any pixel inside the mouth's angular wedge gets filled or erased. No numpy, no external frames.
+- **Frightened flash** — ghosts blink white during the last 2 seconds of frightened mode, like the arcade original.
+- **CRT overlay** — scanlines plus radial vignette, pre-rendered once and blitted over every screen.
+- **Arcade menu** — live top-score banner and an animated chase strip where the four ghosts pursue Pac-Man across the bottom of the main menu.
 
-Both exclude `.venv` from the mypy check.
+---
 
-### Clean
+## Cheat Mode
 
-```bash
-make clean
-```
+Built for peer review, kept deliberately simple — flags checked inline where they matter, no second control layer:
 
-Removes `__pycache__`, `.mypy_cache`, `.pytest_cache`, `*.egg-info`, and `.venv`.
+| Key | Effect |
+|:---|:---|
+| `I` | Toggle invincibility (ghost collisions cost no lives) |
+| `N` | Force-complete the current level |
 
 ---
 
 ## Configuration
 
-The game reads a `config.json` at startup. Comments are allowed even though this isn't strictly valid JSON: any line starting with `#` is stripped before the file is handed to `json.loads`.
-
-Example:
+`pac-man.py` takes exactly one argument: a JSON config file. `#`-comments are allowed despite not being valid JSON — they're stripped before parsing.
 
 ```json
 {
+    // "window": {"width": 1280, "height": 960, "fps": 60},
     "highscore_filename": "highscores.json",
     "lives": 3,
     "pacgum": 42,
@@ -98,126 +126,73 @@ Example:
     "seed": 42,
     "level_max_time": 100,
     "level": [
-        {
-            "width": 15,
-            "height": 15
-        }
+        {"width": 15, "height": 15},
+        {"width": 20, "height": 15}
     ]
 }
 ```
 
-| Key | Meaning | Default behavior if missing/invalid |
-|---|---|---|
-| `highscore_filename` | File used to persist the Top 10 | Falls back to a hardcoded default filename |
-| `lives` | Starting player lives | Falls back to `3` |
-| `pacgum` | Number of regular pacgums placed per level | Falls back to a hardcoded default |
-| `points_per_pacgum` | Score awarded per regular pacgum | Falls back to `10` |
-| `points_per_super_pacgum` | Score awarded per super-pacgum | Falls back to `50` |
-| `points_per_ghost` | Score awarded per ghost eaten while frightened | Falls back to `200` |
-| `seed` | Seed used for level 1's maze | Falls back to `42`; levels 2+ always use a randomized seed regardless of this value |
-| `level_max_time` | Time limit (seconds) per level | Falls back to a hardcoded default |
-| `level` | Width/height of the maze grid | Falls back to hardcoded dimensions |
+| Key | Meaning | Default |
+|:---|:---|:---|
+| `window` | Optional fixed window size/fps; omitted → auto-fit 80% of desktop, 4:3 | auto |
+| `lives` | Starting lives | `3` |
+| `pacgum` | Pacgums placed per level | `42` |
+| `points_per_*` | Score per pacgum / super-pacgum / ghost | `10` / `50` / `200` |
+| `seed` | Level 1 maze seed (levels 2+ randomize) | `42` |
+| `level_max_time` | Seconds per level | `90` |
+| `level` | Per-level maze dimensions (5–45 cells) | `21×21` |
 
-The parser follows a zero-trust approach: invalid types (a string where an int is expected, a negative value where only non-negative makes sense) are clamped to sane bounds rather than raising, unknown keys are ignored, and missing keys silently fall back to hardcoded defaults. There is no path through a malformed config that produces a traceback.
+Every value is clamped to sane bounds; unknown keys are ignored.
 
 ---
 
-## Highscore
+## Highscores
 
-Scores are persisted as a Top 10 list in a JSON file (`highscore_filename` in the config, `highscores.json` by default). Every entry is validated on load through a single guard function that checks two things: the score is a non-negative integer, and the name is 1–10 alphanumeric characters or spaces.
+Top-10 persisted in a JSON file (`highscore_filename` in config, `highscores.json` by default), sorted descending on load and on every insert, truncated to 10 entries on save.
 
-The system was built to survive manual tampering rather than just honest gameplay: if the file has been hand-edited into something invalid, or `json.load` fails outright, the loader doesn't try to salvage or partially repair it — it deletes the corrupted file and returns an empty list, so the game keeps running instead of crashing on a highscore screen. This trades "recover what we can" for "never crash," which given the project's zero-traceback requirement was the right side of that trade-off.
+The design goal was surviving manual tampering, not just honest gameplay. Every entry is validated on load through a single guard: score must be a non-negative integer, name 1–10 characters (alphanumeric and spaces). If the file has been hand-edited into something invalid — or `json.load` fails outright — the loader deletes the corrupted file and returns an empty table instead of crashing the highscore screen. That trades "recover what we can" for "never crash", which given the project's zero-traceback requirement was the right side of the trade-off.
+
+Name entry happens on the end screen (win or lose): 10-character input, defaults to `AAA` when submitted empty.
 
 ---
 
 ## Maze Generation
 
-Mazes are generated through the external `A-Maze-ing` package assigned by another group, distributed as a prebuilt wheel (`mazegenerator-00001-py3-none-any.whl`) rather than as source — it's installed as-is via `uv pip install` and never modified. `src/level_manager/maze_loader.py` adapts to whatever interface that package exposes, not the other way around. The loader forces `PERFECT=False`, since a perfect maze — exactly one path between any two cells — doesn't leave room for the loops and alternate routes that make ghost-chasing and escaping meaningful in Pac-Man.
+Mazes come from the external **A-Maze-ing** package assigned by another team, installed as-is from a bundled wheel and never modified — the loader (`maze_loader.py`) adapts to its interface, not the other way around. `PERFECT=False` is forced because a perfect maze (exactly one path between any two cells) leaves no loops, and without loops there's no escaping a cornered Pac-Man.
 
-Level 1 always uses a fixed seed (`42` by default, configurable) so the first level is reproducible for testing and defense. Levels 2 and onward use randomized seeds, so no two playthroughs past the first level look the same.
+Dimensions are clamped to 5–45: below 5 the grid can't guarantee spawns, above 45 the generator's DFS recursion overflows.
 
 ---
 
-## Implementation
+## Installation & Usage
 
-### Movement: hybrid grid/pixel model
+### Requirements
 
-Entities track a logical cell `(col, row)` for decision-making and a pixel position `(px, py)` for rendering. They move continuously in pixels, interpolating toward the center of the next cell, and only evaluate navigation decisions — turning, colliding, eating a pacgum, a ghost choosing a direction — once they're aligned to a cell center. This keeps all the actually hard logic (collisions, AI) reasoning over a small discrete grid instead of continuous coordinates, while the screen still shows smooth per-pixel motion.
+- Python 3.10+
+- [`uv`](https://github.com/astral-sh/uv)
 
-Player turns are buffered: pressing a direction before reaching the next intersection queues that turn, which gets applied automatically once it becomes valid. This is what makes the controls feel responsive rather than requiring frame-perfect input, matching the feel of the original arcade cabinet.
+### Install & Run
 
-### Time: delta-time driven, not tick-based
-
-```python
-dt = clock.tick(60) / 1000.0
-dt = min(dt, 0.05)
-game.update(dt)
+```bash
+make install      # uv sync + bundled maze-generator wheel
+make run          # uv run python3 pac-man.py config.json
 ```
 
-Every entity moves at `speed * dt`, so gameplay speed is independent of frame rate. All timers — the per-level countdown, frightened mode duration, ghost respawn delay — accumulate `dt` rather than counting frames. The clamp on `dt` is not optional: without it, a lag spike or a dragged window produces one oversized `dt` that can tunnel an entity straight through a wall.
-
-### Ghost AI
-
-Ghosts run a finite state machine with four states: `CHASE`, `SCATTER`, `FRIGHTENED`, and `EATEN`. Like the player, they only make navigation decisions at cell-aligned intersections.
-
-The four ghosts share a global wave timer rather than deciding chase/scatter independently: the game starts in `SCATTER` for 7 seconds, then flips to `CHASE` for 15, then back to `SCATTER`, alternating for as long as the level runs. Any ghost currently `FRIGHTENED` or `EATEN` is left alone when the wave flips — it only picks up the new global state once it's back to normal. Eating a super-pacgum interrupts the wave: every non-eaten ghost switches to `FRIGHTENED` for 8 seconds, counted down independently of the wave timer, and reverts to whatever the global state was when the frightened window ends. When eaten, a ghost doesn't return to a shared central house — it heads back to its own corner spawn point.
-
-Losing a life resets more than just the player: `Game._update()` also resets every ghost's state and position back to its spawn corner, so each life starts clean rather than mid-chase.
-
-### Cheat mode
-
-There's no separate cheat module — cheat behavior is a handful of flags checked directly where they matter. `Player` carries an `is_invincible` flag that short-circuits the life-loss branch in `Game._update()`: a ghost colliding with the player is a normal FSM transition either way, but the life is only spent if the flag is off. The rest of the cheat set (level skip, ghost freeze, extra lives) follows the same pattern — a state check inline in `Game` or `Player` rather than a dedicated system, kept deliberately simple since the whole point is helping a reviewer test features fast, not building a second control layer.
-
-### UI Architecture & Programmer B Overview
-
-Base Screen & Polymorphism (base_screen.py): An abstract BaseScreen class enforces standard methods (handle_input(), update(), draw()). All screens inherit from it, enabling the main game loop to update and render active screens polymorphically.
-
-Menu Hierarchy (menus/): Manages user navigation across the Main Menu, Pause Menu, Instructions, High Scores, and End Screens (Game Over/Victory with score entry inheritance).
-
-In-Game Interface & Rendering:
-    
-* play_screen.py: Coordinates active gameplay state, combining the map, entities, and UI overlay.
-* hud.py: Displays real-time game telemetry (score, remaining lives, timer, and level).
-* renderer.py: Encapsulates drawing primitives to decouple graphic calls from core logic.
-* input_handler.py: Centralizes event polling and maps user keystrokes to actions.
-
-
-### Systems & Data Persistence (src/systems/)
-
-The systems package handles external data loading, configuration parsing, and local data persistence, enforcing a zero-crash policy for external file operations:
-
-* config_parser.py (Resilient Config Parser):
-
-    Comment Preprocessing: Strips # lines before JSON parsing.
-    Self-Healing Validation: Uses Pydantic to replace individual invalid or out-of-bounds fields with safe defaults while preserving valid keys—guaranteeing zero crashes from bad config files.
-
-* highscore.py (High Score Management):
-
-    Top 10 Storage: Manages score persistence (highscores.json) with strict guards (1–10 char names, non-negative integer scores).
-    Anti-Tampering Resilience: Purges corrupted or hand-edited JSON files and resets to a clean table to prevent UI crashes.
----
-
-## General Software Architecture
-
-The project follows MVC with dependency injection, split cleanly along the model/view boundary:
-
-```
-pac-man.py  ──► src/app.py  (orchestrator: main loop, dt, application FSM)
-                    │
-                    ▼
-            src/states.py  (GameState enum + entity contract — shared interface)
-                    │
-        ┌───────────┴────────────┐
-        ▼                        ▼
-  src/core/ + src/entities/   src/ui/ + src/systems/ + src/level_manager/
-  (Model — zero Pygame)       (View/Controller — reads model, never mutates it)
+```bash
+make debug        # under pdb
+make lint         # flake8 + mypy
+make lint-strict  # flake8 + mypy --strict
+make clean        # remove caches and venv
 ```
 
-**`core/` and `entities/`** contain the entire simulation: `game.py` owns the world state and `update(dt)`, `level.py` owns a single level's grid/pacgums/timer, `progression.py` owns the sequence of levels and persistent score/lives. `entity.py`, `player.py`, `ghost.py`, and `collectibles.py` implement the actors. None of this layer imports Pygame — it can be reasoned about and tested as plain Python.
+### Controls
 
-**`ui/`, `systems/`, and `level_manager/`** contain everything else: `renderer.py` reads `px/py` and `sprite_id` off the model to draw it and never writes back; `play_screen.py` orchestrates the in-game screen while `menus/` holds one file per screen (main menu, pause, highscores, instructions, end screens) instead of one large menu module; `input_handler.py` translates keystrokes into intentions rather than mutating entities directly; `config_parser.py` and `highscore.py` handle persistence; `maze_loader.py` adapts the external `A-Maze-ing` wheel to what `core/` expects.
-
-The bridge between the two halves is the **entity contract** in `states.py`: every entity exposes `cell`, `px`/`py`, `direction`, and `sprite_id`; `Player` additionally exposes `lives`; `Ghost` additionally exposes its FSM `state`. It's the only file both sides needed to agree on before writing anything else — once it was fixed, the simulation and the rendering/data layers could move independently.
+| Key | Action |
+|:---|:---|
+| `↑ ↓ ← →` / `W A S D` | Move (input is buffered) |
+| `P` / `Esc` | Pause / resume |
+| `Enter` / `Space` | Confirm menu selection |
+| `I` / `N` | Cheat: invincibility / level skip |
 
 ---
 
@@ -225,64 +200,44 @@ The bridge between the two halves is the **entity contract** in `states.py`: eve
 
 ```
 pacman/
-├── pac-man.py                          # Entry point (exactly 1 arg: the config file)
-├── config.json                         # Example configuration
-├── mazegenerator-00001-py3-none-any.whl # Assigned A-Maze-ing build, installed via `make install`
-├── Makefile                            # install / run / debug / test / clean / lint
-├── pyproject.toml                      # Dependencies
-├── uv.lock
-│
-├── project_management/
-├── packaging/                          # PyInstaller/Steam-Itch.io build
-│
+├── pac-man.py                # Entry point (exactly 1 arg: config file)
+├── config.json               # Example configuration
+├── Makefile                  # install / run / debug / lint / clean
+├── assets/                   # Sprites + demo GIF
+├── project_management/       # Timeline, risks, team organization
 └── src/
-    ├── app.py                          # Main loop, dt, application-level FSM
-    ├── states.py                       # GameState enum + entity contract
-    │
-    ├── assets/images/                  # blinky, pinky, inky, clyde, pacman, frightened sprites
-    │
-    ├── core/                           # Simulation — no Pygame
-    │   ├── game.py                     # World state, update(dt), ghost wave/frighten logic
-    │   ├── level.py                    # Grid, pacgums, timer, win condition
-    │   └── progression.py              # Level sequence, seeding, persistent score/lives
-    │
+    ├── app.py                # Window, main loop, app FSM, CRT overlay
+    ├── states.py             # GameState enum + entity contract
+    ├── core/                 # Simulation — zero Pygame
+    │   ├── game.py           # update(dt), waves, collisions, scoring
+    │   ├── level.py          # Grid, spawns, collectibles, timer
+    │   └── progression.py    # Level sequence, persistent score/lives
     ├── entities/
-    │   ├── entity.py                   # Base class: cell, px/py, direction
-    │   ├── player.py                   # Movement, input buffering, lives, cheat flags
-    │   ├── ghost.py                    # FSM: chase / scatter / frightened / eaten
-    │   └── collectibles.py             # Pacgum, SuperPacgum
-    │
+    │   ├── entity.py         # Entity → MovingEntity → Collectible
+    │   ├── player.py         # Buffered input, lives, cheat flag
+    │   ├── ghost.py          # Ghost FSM + 4 personality subclasses
+    │   └── collectibles.py   # Pacgum, SuperPacgum
     ├── level_manager/
-    │   └── maze_loader.py              # Adapter for the external A-Maze-ing wheel
-    │
+    │   └── maze_loader.py    # Adapter for the A-Maze-ing wheel
     ├── systems/
-    │   ├── config_parser.py            # Self-healing JSON configuration parser
-    │   └── highscore.py                # Top 10 persistence & anti-tampering validation
-    │
+    │   ├── config_parser.py  # Self-healing Pydantic config
+    │   └── highscore.py      # Top-10 persistence + validation
     └── ui/
-        ├── renderer.py                 # Draws the model, never mutates it
-        ├── play_screen.py              # In-game screen orchestration
-        ├── hud.py                      # Score, lives, level, time remaining
-        ├── input_handler.py            # Keys → intentions
-        └── menus/                      # One screen per file
-            ├── base_screen.py          # Abstract base class for all screens
-            ├── base_score_entry.py     # Polymorphic database for entering scores
-            ├── main_menu.py            # main menu
-            ├── pause_menu.py           # pause menu
-            ├── highscores_menu.py      # High Scores Table
-            ├── instructions_menu.py    # Controls/Instructions Screen
-            └── end_screens.py          # Game Over / Victory Screens
+        ├── play_screen.py    # In-game orchestration
+        ├── renderer.py       # Neon maze, sprites, animation
+        ├── sprites.py        # Cached sprite bank
+        ├── hud.py            # Score / lives / level / timer
+        ├── input_handler.py  # Keys → Directions
+        └── menus/            # One screen per file, shared BaseScreen
 ```
 
 ---
 
 ## Project Management
 
-Work was split by ownership rather than by ticket: one programmer owned the simulation (`core/`, `entities/`), the other owned systems, UI, and data (`ui/`, `systems/`, `level_manager/`). The entity contract in `states.py` was fixed before any other code was written, specifically so both sides could build independently without merge conflicts on shared logic.
+Work was split by ownership rather than tickets: one programmer owned the simulation (`core/`, `entities/`), the other owned UI and data (`ui/`, `systems/`, `level_manager/`). The entity contract in `states.py` was written before anything else specifically so both halves could be built in parallel without merge conflicts on shared logic.
 
-Development went through four phases: fixing the contract and skeleton first, then a minimal vertical slice (player moving on a real maze), then the playable core (collisions, ghosts, rendering), then systems and polish (menus, highscores, packaging). Each phase ended with an integration checkpoint instead of leaving everything to merge at the end.
-
-Timeline, risk analysis, and team organization notes are being written up in `project_management/`; packaging to a public platform and the pytest suite are the remaining open items before submission.
+Four phases, each ending with an integration checkpoint: contract & skeleton → vertical slice (player moving on a real maze) → playable core (ghosts, collisions, rendering) → systems & polish (menus, highscores, packaging). Timeline, risk analysis, and team organization notes live in [`project_management/`](project_management/).
 
 ---
 
@@ -291,10 +246,10 @@ Timeline, risk analysis, and team organization notes are being written up in `pr
 ### References
 
 - [Pygame documentation](https://www.pygame.org/docs/)
-- [Pac-Man ghost AI — how the original arcade ghosts actually decide where to go](https://gameinternals.com/understanding-pac-man-ghost-behavior)
-- [Fix Your Timestep! — Gaffer On Games (delta time and frame-independent movement)](https://gafferongames.com/post/fix_your_timestep/)
-- [Finite State Machines for game AI](https://gameprogrammingpatterns.com/state.html)
+- [Understanding Pac-Man ghost behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
+- [Fix Your Timestep! — Gaffer On Games](https://gafferongames.com/post/fix_your_timestep/)
+- [Game Programming Patterns — State](https://gameprogrammingpatterns.com/state.html)
 
 ### AI usage
 
-AI was used strictly as a Socratic mentor to validate architectural decisions, clarify OOP concepts, and assist in structuring this documentation safely.
+AI was used as a Socratic mentor to validate architectural decisions, for SOLID-oriented refactoring feedback (behavior verified unchanged against a deterministic simulation baseline), and to help structure this documentation. All final code and design decisions were reviewed, tested, and are fully understood by the authors.

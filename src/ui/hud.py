@@ -2,22 +2,9 @@ import pygame
 
 
 class HUD:
-    """Renders and manages the top Heads-Up Display (HUD) bar
-    in an arcade style.
-
-    Displays real-time gameplay indicators including current score,
-    remaining level time, active level number, and player lives represented
-    by procedural Pac-Man icons.
-    """
+    """Renders the top heads-up display: score, time, level, and lives."""
 
     def __init__(self, screen_width: int, screen_height: int) -> None:
-        """Initializes the HUD layout dimensions, font assets,
-        and visual color palette.
-
-        Args:
-            screen_width: Width of the display surface in pixels.
-            screen_height: Height of the display surface in pixels.
-        """
         self.width = screen_width
         self.height = screen_height
         self.hud_height = 45
@@ -30,34 +17,19 @@ class HUD:
             else pygame.font.SysFont("Arial", 16, bold=True)
         )
 
-        self.COLOR_BG = (10, 10, 15)
-        self.COLOR_CARD_BG = (15, 15, 25)
-        self.COLOR_BORDER = (33, 33, 222)
-        self.COLOR_LABEL = (160, 160, 170)
+        self.COLOR_BG = (12, 8, 24)
+        self.COLOR_CARD_BG = (18, 13, 36)
+        self.COLOR_BORDER = (0, 229, 255)
+        self.COLOR_LABEL = (150, 140, 180)
         self.COLOR_SCORE = (255, 255, 255)
-        self.COLOR_TIME_NORMAL = (0, 255, 255)
-        self.COLOR_TIME_WARN = (255, 50, 50)
-        self.COLOR_LEVEL = (255, 183, 255)
+        self.COLOR_TIME_NORMAL = (0, 229, 255)
+        self.COLOR_TIME_WARN = (255, 46, 99)
+        self.COLOR_LEVEL = (200, 120, 255)
         self.COLOR_PACMAN = (255, 255, 0)
 
     def _draw_life_icon(self, surface: pygame.Surface, x: int,
                         is_invincible: bool, y: int, radius: int = 7) -> None:
-        """Draws a single procedural Pac-Man icon representing
-        an available life.
-
-        Renders a circle with a cut-out wedge polygon to simulate an
-        open mouth, applying either standard yellow or dynamic
-        invincibility coloring.
-
-        Args:
-            surface: The Pygame target surface to draw onto.
-            x: The horizontal center position of the icon in pixels.
-            is_invincible: Flag indicating whether to apply a
-                           cycling rainbow color.
-            y: The vertical center position of the icon in pixels.
-            radius: Radius of the Pac-Man icon circle in pixels.
-                    Defaults to 7.
-        """
+        """Draw one Pac-Man life icon, rainbow-colored when invincible."""
         if is_invincible:
             pygame.draw.circle(surface, self.get_invincible_color(),
                                (x, y), radius)
@@ -80,20 +52,7 @@ class HUD:
         time_remaining: int,
         invincible: bool
     ) -> None:
-        """Renders the complete top HUD bar with all stats, labels, and icons.
-
-        Divides the top bar into 4 distinct sections
-        (Score, Time, Level, Lives) and draws text textures and life icons
-        onto the target surface.
-
-        Args:
-            surface: The main Pygame display surface to draw onto.
-            score: Current player score value.
-            lives: Number of remaining player lives.
-            level: Active level sequence number.
-            time_remaining: Remaining level time in seconds.
-            invincible: Whether player invincibility mode is currently active.
-        """
+        """Render the complete HUD bar with all stats and life icons."""
 
         hud_rect = pygame.Rect(0, 0, self.width, self.hud_height)
         pygame.draw.rect(surface, self.COLOR_BG, hud_rect)
@@ -151,14 +110,7 @@ class HUD:
             )
 
     def get_invincible_color(self) -> tuple[int, int, int]:
-        """Generates a dynamic cycling RGB color using current
-        ticks for invincibility feedback. Converts a hue angle derived
-        from elapsed milliseconds into an RGB tuple.
-
-        Returns:
-            tuple[int, int, int]: An (R, G, B) tuple representing
-            the active rainbow color.
-        """
+        """Return a time-cycling rainbow RGB tuple for invincibility."""
         current_time = pygame.time.get_ticks()
         hue = (current_time * 2) % 360
         color = pygame.Color(0, 0, 0)

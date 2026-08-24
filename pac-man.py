@@ -9,6 +9,7 @@ from src.systems.config_parser import load_config
 
 
 def handle_sigquit(signum: int, frame: Any) -> None:
+    """Exit gracefully on Ctrl+\\ (SIGQUIT)."""
     print("\n[Info] Game interrupted by user (Ctrl+\\). "
           "Exiting gracefully...")
     _safe_pygame_quit()
@@ -16,8 +17,7 @@ def handle_sigquit(signum: int, frame: Any) -> None:
 
 
 def get_resource_path(relative_path: str) -> str:
-    """Get the file path both during development and within
-    the PyInstaller package."""
+    """Resolve a resource path in development and PyInstaller builds."""
     if hasattr(sys, '_MEIPASS'):
         bundled_path = os.path.join(sys._MEIPASS, relative_path)
         if os.path.exists(bundled_path):
@@ -26,6 +26,7 @@ def get_resource_path(relative_path: str) -> str:
 
 
 def main() -> None:
+    """Entry point: validate the config argument and launch the app."""
     if hasattr(signal, 'SIGQUIT'):
         signal.signal(signal.SIGQUIT, handle_sigquit)
     parser = argparse.ArgumentParser(description="Pac-Man 42")

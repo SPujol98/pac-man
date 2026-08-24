@@ -6,7 +6,7 @@ from src.systems.highscore import load_highscores
 
 
 class HighscoresMenu(BaseScreen):
-    """Display the high scores table (Top 10)."""
+    """Screen displaying the Top 10 high scores table."""
 
     def __init__(self,
                  screen_width: int,
@@ -16,22 +16,17 @@ class HighscoresMenu(BaseScreen):
         self.highscore_file = highscore_file
         self.scores: List[Dict[str, Any]] = []
 
-        has_emulogic = "emulogic" in pygame.font.get_fonts()
-        self.title_font = (
-            pygame.font.SysFont("emulogic", 26)
-            if has_emulogic
-            else pygame.font.SysFont("Arial", 30, bold=True)
-        )
+        self.title_font = self._load_arcade_font(26, 30)
         self.header_font = pygame.font.SysFont("Arial", 18, bold=True)
         self.row_font = pygame.font.SysFont("Arial", 18, bold=True)
         self.footer_font = pygame.font.SysFont("Arial", 14)
 
     def refresh_scores(self) -> None:
-        """Load the updated scores from storage."""
+        """Reload the current scores from storage."""
         self.scores = load_highscores(self.highscore_file)
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
-        """Press ESC, Enter, or the Space bar to return to the main menu."""
+        """Press ESC, Enter, or Space to return to the main menu."""
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_ESCAPE, pygame.K_RETURN, pygame.K_SPACE):
                 return GameState.MENU

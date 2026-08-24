@@ -9,11 +9,8 @@ if TYPE_CHECKING:
 
 
 class Player(MovingEntity):
-    """The user-controlled character, moved via buffered directional input.
+    """The user-controlled character, moved via buffered directional input."""
 
-    Attributes:
-        lives: Remaining lives before game over.
-    """
     def __init__(self, cell: tuple[int, int], speed: float,
                  lives: int) -> None:
         super().__init__(cell, "player", speed)
@@ -23,6 +20,7 @@ class Player(MovingEntity):
         self.is_invincible: bool = False
 
     def set_desired_direction(self, direction: Direction) -> None:
+        """Buffer a direction to apply as soon as it becomes valid."""
         self._buffered_direction = direction
 
     def _choose_direction(
@@ -41,8 +39,10 @@ class Player(MovingEntity):
         return None
 
     def reset_state(self) -> None:
+        """Clear buffered input and stop at the current cell."""
         super().reset_state()
         self._buffered_direction = None
 
     def invincible_switch(self) -> None:
+        """Toggle cheat-mode invincibility on or off."""
         self.is_invincible = not self.is_invincible

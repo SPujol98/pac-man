@@ -1,4 +1,5 @@
 {
+    # "window": {"width": 1280, "height": 960, "fps": 60},
     "highscore_filename": "highscores.json",
     "lives": 3,
     "pacgum": 20,

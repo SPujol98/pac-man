@@ -4,7 +4,7 @@ from src.states import Direction
 
 
 class InputHandler:
-    """Use the control inputs (arrows and WASD)."""
+    """Translates arrow-key and WASD events into game Directions."""
 
     def __init__(self) -> None:
         self.key_map = {
@@ -19,8 +19,7 @@ class InputHandler:
         }
 
     def process_event(self, event: pygame.event.Event) -> Optional[Direction]:
-        """Converts a KEYDOWN event into a Direction
-        object for the entities."""
+        """Convert a KEYDOWN event into a Direction, if mapped."""
         if event.type == pygame.KEYDOWN:
             return self.key_map.get(event.key)
         return None

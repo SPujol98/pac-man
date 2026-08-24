@@ -1,14 +1,11 @@
-class GameProgression():
-    """Manage the sequence of game levels and progression state.
+class GameProgression:
+    """Tracks level progression up to the maximum level (10)."""
 
-    Provides functionality to advance to the next level if the maximum
-    limit (10) is not reached, returning True on success or False if
-    the game is completed.
-    """
     def __init__(self) -> None:
         self.level_check: int = 1
 
     def next_level(self) -> bool:
+        """Advance to the next level, or return False past the last one."""
         if self.level_check < 10:
             self.level_check += 1
             return True

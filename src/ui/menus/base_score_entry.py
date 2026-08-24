@@ -6,7 +6,7 @@ from src.systems.highscore import save_highscore
 
 
 class BaseScoreEntryScreen(BaseScreen):
-    """Basic screen with a text box for entering punctuation."""
+    """Base end-game screen with a text box for entering the player name."""
 
     def __init__(
         self,
@@ -28,24 +28,19 @@ class BaseScoreEntryScreen(BaseScreen):
         self.player_name: str = ""
         self.max_name_length: int = 10
 
-        has_emulogic = "emulogic" in pygame.font.get_fonts()
-        self.title_font = (
-            pygame.font.SysFont("emulogic", 26)
-            if has_emulogic
-            else pygame.font.SysFont("Arial", 30, bold=True)
-        )
+        self.title_font = self._load_arcade_font(26, 30)
         self.subtitle_font = pygame.font.SysFont("Arial", 16)
         self.score_font = pygame.font.SysFont("Arial", 22, bold=True)
         self.input_font = pygame.font.SysFont("Arial", 24, bold=True)
         self.footer_font = pygame.font.SysFont("Arial", 14)
 
     def set_final_score(self, score: int) -> None:
-        """Sets the final score achieved in the game."""
+        """Set the final score and reset the name entry field."""
         self.final_score = score
         self.player_name = ""
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
-        """Handles text input from the keyboard."""
+        """Handle text input and confirm the name with Enter."""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
                 self.player_name = self.player_name[:-1]
@@ -64,13 +59,12 @@ class BaseScoreEntryScreen(BaseScreen):
         return None
 
     def draw(self, surface: pygame.Surface) -> None:
-        """Renders the graphical interface with a retro style."""
+        """Render the retro-style score entry interface."""
         surface.fill(self.COLOR_BG)
 
-        title_surf = self.title_font.render(self.title_text,
-                                            True, self.title_color)
-        title_rect = title_surf.get_rect(center=(self.width // 2, 70))
-        surface.blit(title_surf, title_rect)
+        self._draw_glow_text(surface, self.title_text, self.title_font,
+                             self.title_color, (self.width // 2, 70),
+                             self.title_color, glow_alpha=55)
 
         if self.subtitle_text:
             sub_surf = self.subtitle_font.render(self.subtitle_text,
@@ -114,14 +108,16 @@ class BaseScoreEntryScreen(BaseScreen):
         text_rect = text_surf.get_rect(center=input_box.center)
         surface.blit(text_surf, text_rect)
 
-        footer_surf = self.footer_font.render("PRESS ENTER TO SAVE SCORE",
-                                              True, self.COLOR_LABEL)
-        footer_rect = footer_surf.get_rect(
-            center=(self.width // 2,
-                    card_rect.bottom + 35)
-        )
-        surface.blit(footer_surf, footer_rect)
+        if (pygame.time.get_ticks() // 400) % 2 == 0:
+            footer_surf = self.footer_font.render(
+                "PRESS ENTER TO SAVE SCORE",
+                True, self.COLOR_HEADER)
+            footer_rect = footer_surf.get_rect(
+                center=(self.width // 2,
+                        card_rect.bottom + 35)
+            )
+            surface.blit(footer_surf, footer_rect)
 
     def _save_highscore(self, name: str, score: int) -> None:
-        """Save the score to the scores file using highscore.py."""
+        """Persist the entry through the highscore system."""
         save_highscore(name=name, score=score, filepath=self.highscore_file)

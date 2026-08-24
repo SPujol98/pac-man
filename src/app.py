@@ -1,5 +1,6 @@
+import math
 import pygame
-from typing import Any
+from typing import Any, Optional
 from src.states import GameState
 from src.ui.menus import (
     MainMenu,
@@ -11,24 +12,12 @@ from src.ui.menus import (
     WinScreen
 )
 from src.ui.play_screen import PlayScreen
-from src.level_manager.maze_loader import load_maze
 
 
 class App:
-    """Main application manager and state machine coordinator.
+    """Main application: window, screen registry, and app state machine."""
 
-    Handles Pygame subsystem initialization, resizable window configuration,
-    virtual surface scaling, global event dispatching, and transitions
-    between active game screens.
-    """
     def __init__(self, config: dict[str, Any]):
-        """Initializes Pygame display, window settings, virtual canvas,
-        and screen registry.
-
-        Args:
-            config: Configuration dictionary containing window, maze layout,
-            and gameplay settings.
-        """
         pygame.init()
         pygame.font.init()
         self.config = config
@@ -40,10 +29,10 @@ class App:
              self.VIRTUAL_HEIGHT)
             )
 
-        window_cfg = config.get("window", {})
-        self.real_width = window_cfg.get("width", 1600)
-        self.real_height = window_cfg.get("height", 1200)
-        self.fps = window_cfg.get("fps", 60)
+        window_cfg = config.get("window") or {}
+        self.real_width, self.real_height = self._resolve_window_size(
+            window_cfg.get("width"), window_cfg.get("height"))
+        self.fps = window_cfg.get("fps") or 60
 
         self.screen = pygame.display.set_mode(
             (self.real_width, self.real_height), pygame.RESIZABLE
@@ -51,20 +40,44 @@ class App:
         pygame.display.set_caption("Pac-Man 42")
         self.clock = pygame.time.Clock()
 
-        maze_cfg = config.get("maze", {})
-        width = maze_cfg.get("width", 21)
-        height = maze_cfg.get("height", 21)
-        seed = maze_cfg.get("seed", 42)
-
-        self.maze_data = load_maze(width=width, height=height, seed=seed)
         self.state = GameState.MENU
         self.is_running = True
         self.highscore_file: str = self.config.get(
             "highscore_filename", "highscores.json"
         )
+        self.crt_overlay = self._build_crt_overlay(
+            self.VIRTUAL_WIDTH, self.VIRTUAL_HEIGHT)
+        self.screens = self._build_screens()
 
-        self.screens: dict[GameState, BaseScreen] = {
-            GameState.MENU: MainMenu(self.VIRTUAL_WIDTH, self.VIRTUAL_HEIGHT),
+    @staticmethod
+    def _resolve_window_size(width: Optional[int],
+                             height: Optional[int]) -> tuple[int, int]:
+        """Return the configured window size, or a 4:3 size that fits
+        80% of the desktop."""
+        desktop_w, desktop_h = 1920, 1080
+        try:
+            sizes = pygame.display.get_desktop_sizes()
+            if sizes:
+                desktop_w, desktop_h = sizes[0]
+        except pygame.error:
+            pass
+
+        if isinstance(width, int) and isinstance(height, int):
+            return (min(max(width, 400), desktop_w),
+                    min(max(height, 300), desktop_h))
+
+        win_h = int(desktop_h * 0.8)
+        win_w = int(win_h * 4 / 3)
+        if win_w > desktop_w:
+            win_w = desktop_w
+            win_h = int(win_w * 3 / 4)
+        return win_w, win_h
+
+    def _build_screens(self) -> dict[GameState, BaseScreen]:
+        """Instantiate every screen once, keyed by application state."""
+        return {
+            GameState.MENU: MainMenu(self.VIRTUAL_WIDTH, self.VIRTUAL_HEIGHT,
+                                     self.highscore_file),
             GameState.INSTRUCTIONS: InstructionsMenu(self.VIRTUAL_WIDTH,
                                                      self.VIRTUAL_HEIGHT),
             GameState.HIGHSCORES: HighscoresMenu(self.VIRTUAL_WIDTH,
@@ -84,12 +97,7 @@ class App:
         }
 
     def run(self) -> None:
-        """Executes the core application loop until execution is terminated.
-
-        Continuously dispatches event handling, frame updates,
-        surface rendering, and frame rate capping, followed by clean Pygame
-        module shutdown upon exit.
-        """
+        """Run the core application loop until quit, then shut down Pygame."""
         while self.is_running:
             self._handle_events()
             self._update()
@@ -98,16 +106,7 @@ class App:
         pygame.quit()
 
     def _change_state(self, new_state: GameState) -> None:
-        """Centralizes state machine transitions and invokes screen
-        lifecycle callbacks.
-
-        Passes final scores to terminal game screens (GAME_OVER / WIN)
-        when transitioning out of gameplay, and triggers the `on_enter`
-        hook on the newly activated screen.
-
-        Args:
-            new_state: The target `GameState` to transition into.
-        """
+        """Apply a state transition and fire the screen's on_enter hook."""
 
         if new_state == GameState.QUIT:
             self.is_running = False
@@ -129,21 +128,17 @@ class App:
             target_screen.on_enter(previous_state)
 
     def _handle_events(self) -> None:
-        """Processes global system inputs and delegates user inputs
-        to the active screen.
-
-        Handles application quit and window resizing events directly,
-        while passing user control events to the active screen handler.
-        """
+        """Process system events and delegate the rest to the active screen."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.is_running = False
 
             elif event.type == pygame.VIDEORESIZE:
-                self.real_width, self.real_height = event.w, event.h
-                self.screen = pygame.display.set_mode(
-                    (self.real_width, self.real_height), pygame.RESIZABLE
-                )
+                # SDL2 resizes the display surface on its own; calling
+                # set_mode here recreates the window and loops forever
+                # on tiling WMs (Hyprland/i3/sway).
+                if event.w > 0 and event.h > 0:
+                    self.real_width, self.real_height = event.w, event.h
 
             else:
                 current_screen = self.screens.get(self.state)
@@ -156,30 +151,47 @@ class App:
                         self._change_state(new_state)
 
     def _update(self) -> None:
-        """Updates internal logic and state mechanics for the active screen.
-
-        Triggers state transitions if requested by the active screen
-        during its update cycle.
-        """
+        """Update the active screen and apply any requested transition."""
         current_screen = self.screens.get(self.state)
         if current_screen:
             new_state = current_screen.update()
             if new_state and new_state != self.state:
                 self._change_state(new_state)
 
-    def _render(self) -> None:
-        """Renders the active screen onto the virtual surface and
-        scales it to the window.
+    @staticmethod
+    def _build_crt_overlay(width: int, height: int) -> pygame.Surface:
+        """Pre-build the CRT effect: scanlines plus an edge vignette."""
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
 
-        Draws screen elements onto a fixed-resolution virtual canvas (800x600),
-        applies aspect-ratio scaling, and centers (letterboxes)
-        the output within the resizable display window.
-        """
+        for y in range(0, height, 3):
+            pygame.draw.line(overlay, (5, 2, 12, 26), (0, y), (width, y))
+
+        small_w, small_h = max(1, width // 8), max(1, height // 8)
+        vignette = pygame.Surface((small_w, small_h), pygame.SRCALPHA)
+        cx, cy = small_w / 2, small_h / 2
+        max_dist = math.hypot(cx, cy)
+        for y in range(small_h):
+            for x in range(small_w):
+                dist = math.hypot(x - cx, y - cy) / max_dist
+                alpha = int(max(0.0, (dist - 0.55) / 0.45) ** 2.2 * 240)
+                vignette.set_at((x, y), (5, 2, 12, alpha))
+        overlay.blit(pygame.transform.smoothscale(
+            vignette, (width, height)), (0, 0))
+
+        return overlay
+
+    def _render(self) -> None:
+        """Render the active screen and letterbox it into the window."""
+        if self.real_width <= 0 or self.real_height <= 0:
+            return
+
         self.virtual_screen.fill((0, 0, 0))
 
         current_screen = self.screens.get(self.state)
         if current_screen:
             current_screen.draw(self.virtual_screen)
+
+        self.virtual_screen.blit(self.crt_overlay, (0, 0))
 
         self.screen.fill((0, 0, 0))
         scale = min(self.real_width / self.VIRTUAL_WIDTH,

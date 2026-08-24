@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -18,8 +18,17 @@ class ConfigError(Exception):
     pass
 
 
+class WindowConfig(BaseModel):
+    """Optional window settings; None means auto-fit to the desktop."""
+    model_config = ConfigDict(extra="ignore")
+
+    width: Optional[int] = Field(default=None, ge=400, le=7680)
+    height: Optional[int] = Field(default=None, ge=300, le=4320)
+    fps: Optional[int] = Field(default=None, ge=30, le=360)
+
+
 class LevelConfig(BaseModel):
-    """Individual settings for each level of the game."""
+    """Validated width/height settings for a single level."""
     model_config = ConfigDict(extra="forbid")
 
     width: int = Field(ge=5, le=45)
@@ -27,10 +36,11 @@ class LevelConfig(BaseModel):
 
 
 class GameConfig(BaseModel):
-    """Main game configuration diagram."""
+    """Main game configuration schema with safe defaults."""
     model_config = ConfigDict(extra="ignore")
 
     highscore_filename: str = Field(default="highscores.json", min_length=1)
+    window: WindowConfig = Field(default_factory=WindowConfig)
     level: List[LevelConfig] = Field(
         default_factory=lambda: [LevelConfig(width=21, height=21)],
         min_length=1,)
@@ -45,8 +55,7 @@ class GameConfig(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def check_missing_keys(cls, data: Any) -> Any:
-        """Notify if any entries are missing from the dictionary "
-        before applying the defaults."""
+        """Warn about any missing keys before defaults are applied."""
         if not isinstance(data, dict):
             return data
 
@@ -64,6 +73,7 @@ class GameConfig(BaseModel):
     @field_validator("level", mode="before")
     @classmethod
     def filter_valid_levels(cls, levels: Any) -> Any:
+        """Discard invalid level entries instead of failing the whole file."""
         if not isinstance(levels, list):
             return levels
         valid_levels = []
@@ -78,6 +88,7 @@ class GameConfig(BaseModel):
     @field_validator("highscore_filename")
     @classmethod
     def validate_highscore_filename(cls, v: str) -> str:
+        """Reject unsafe or non-JSON filenames, falling back to the default."""
         v = v.strip()
         FORBIDDEN_CHARS = set(r'/\:*?"<>|' + "\n\r\t\0")
         has_invalid_chars = any(c in FORBIDDEN_CHARS for c in v) or any(
@@ -103,9 +114,7 @@ class GameConfig(BaseModel):
 
 
 def strip_comments(text: str) -> str:
-    """Strips '#', '//', and '/* ... */' comments from a string,
-    preserving comment characters inside double-quoted string literals.
-    """
+    """Strip '#', '//', and '/* ... */' comments outside string literals."""
     pattern = r'("(?:\\.|[^"\\])*")|/\*[\s\S]*?\*/|(?:#|//).*'
 
     def _replace(match: re.Match[str]) -> str:
@@ -117,7 +126,7 @@ def strip_comments(text: str) -> str:
 
 
 def load_config(filepath: Union[str, Path]) -> Dict[str, Any]:
-    """Load the configuration in a fault-tolerant manner using self-healing."""
+    """Load the config self-healingly: clamp bad values to safe defaults."""
     path = Path(filepath)
     raw_json = {}
 

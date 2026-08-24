@@ -11,17 +11,7 @@ if TYPE_CHECKING:
 
 
 class Level:
-    """Represents a single maze level: the grid and its walls.
-
-    Attributes:
-        grid: 2D grid of cell values (row-major), int-typed to allow
-            multiple cell kinds in the future (wall, path, tunnel...).
-        time_left: The remaining time to complete the level.
-        collectibles: List of all active pacgums and superpacgums.
-        player_spawn: The (x, y) starting coordinate for the player.
-        ghost_spawns: List of (x, y) starting coordinates for the ghosts.
-        superpacgum_spawns: List of (x, y) coordinates for superpacgums.
-    """
+    """A single maze level: grid, spawns, collectibles, and timer."""
 
     _WALL_MASKS = {
         Direction.UP: 1,
@@ -36,13 +26,11 @@ class Level:
                  superpacgum_points: int,
                  ghost_points: int,
                  time_left: float = 90.0) -> None:
-        """Initialize the maze grid, calculate spawn points,
-        and populate collectibles."""
+        """Initialize the grid, spawn points, and collectibles."""
         self.grid = grid
         self.pacgum_quantity = pacgum_quantity
         self.ghost_points = ghost_points
         self.time_left = time_left
-        self.ghost_points = ghost_points
         self.collectibles: list[Collectible] = []
         self.player_spawn: tuple[int, int] = (0, 0)
         self.ghost_spawns: list[tuple[int, int]] = []
@@ -71,8 +59,7 @@ class Level:
 
     def _get_closest_walkable_cell(self, target_x: int,
                                    target_y: int) -> tuple[int, int]:
-        """Find and return the nearest walkable cell to the given coordinates.
-        """
+        """Return the nearest non-wall cell to the given coordinates."""
         best_cell: tuple[int, int] = (0, 0)
         min_dist_sq: float = float("inf")
 
@@ -87,9 +74,7 @@ class Level:
         return best_cell
 
     def _find_spawn_points(self) -> None:
-        """Calculate and assign the spawn coordinates for the player (mid),
-        superpacgums (corners), and ghosts (adjacent to corners).
-        """
+        """Assign spawns: player (mid), superpacgums (corners), ghosts."""
         if not self.grid or not self.grid[0]:
             return
 
@@ -117,9 +102,7 @@ class Level:
 
     def _spawn_collectibles(self, pacgum_points: int,
                             superpacgum_points: int) -> None:
-        """Scan the grid and populate paths with pacgums and
-        corners with superpacgums.
-        """
+        """Populate paths with pacgums and corners with superpacgums."""
         for pos in self.superpacgum_spawns:
             self.collectibles.append(SuperPacgum(pos, superpacgum_points))
 
@@ -134,5 +117,5 @@ class Level:
                     available_positions.append((x, y))
         safe_quantity = min(self.pacgum_quantity, len(available_positions))
         chosen_positions = random.sample(available_positions, safe_quantity)
-        for i in chosen_positions:
-            self.collectibles.append(Pacgum((i), pacgum_points))
+        for pos in chosen_positions:
+            self.collectibles.append(Pacgum(pos, pacgum_points))

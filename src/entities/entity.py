@@ -8,14 +8,8 @@ if TYPE_CHECKING:
 
 
 class Entity(ABC):
-    """Abstract base class for anything that occupies a cell on the map.
+    """Abstract base class for anything that occupies a cell on the map."""
 
-    Subclasses must implement `update` to define per-frame behavior.
-
-    Attributes:
-        cell: Grid position (column, row).
-        sprite_id: Identifier of the sprite to render.
-    """
     def __init__(self, cell: tuple[int, int], sprite_id: str) -> None:
         self.cell = cell
         self.sprite_id = sprite_id
@@ -23,20 +17,13 @@ class Entity(ABC):
     @abstractmethod
     def update(self, dt: float, level: "Level",
                player: Optional["Player"] = None) -> None:
-        """The entity's state advances by one frame."""
+        """Advance the entity's state by one frame."""
         ...
 
 
 class MovingEntity(Entity):
-    """Base class for entities that moves in the grid.
+    """Base class for entities that move through the grid."""
 
-    Subclasses must implement _choose_direction to decide movement.
-
-    Attributes:
-        speed: Movement speed in grid cells per second.
-        direction: Current facing direction, or None if not moving yet.
-        progress: Float from 0.0 to 1.0 representing distance to next cell.
-    """
     def __init__(self, cell: tuple[int, int], sprite_id: str,
                  speed: float, direction: Optional[Direction] = None) -> None:
         super().__init__(cell, sprite_id)
@@ -47,7 +34,7 @@ class MovingEntity(Entity):
     @abstractmethod
     def _choose_direction(self, level: "Level",
                           player: Optional["Player"]) -> Optional[Direction]:
-        """Decide the next direction. Implemented by each subclass."""
+        """Decide the next direction, implemented by each subclass."""
         ...
 
     def update(self, dt: float, level: "Level",
@@ -74,19 +61,18 @@ class MovingEntity(Entity):
                 self.progress -= 1.0
 
     def get_current_speed(self, player: Optional["Player"] = None) -> float:
+        """Return the effective speed for this frame (overridable)."""
         return self.speed
 
     def reset_state(self) -> None:
+        """Reposition the entity at its current cell, stopped."""
         self.progress = 0.0
         self.direction = None
 
 
 class Collectible(Entity):
-    """Base class for items the player can eat for points.
+    """Base class for static items the player can eat for points."""
 
-    Attributes:
-        points: Score value awarded when eaten.
-    """
     def __init__(self, cell: tuple[int, int], sprite_id: str,
                  points: int) -> None:
         super().__init__(cell, sprite_id)

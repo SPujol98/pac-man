@@ -4,15 +4,7 @@ from typing import Any, Dict, List, Union
 
 
 def _is_valid_entry(item: Any) -> bool:
-    """Validates whether a raw highscore entry matches the required
-    schema and constraints.
-    Args:
-        item: The object to validate, expected to be a dictionary.
-    Returns:
-        bool: True if the item is a dictionary containing a
-        non-negative integer 'score' and an alphanumeric/space
-        'name' string up to 10 characters long; False otherwise.
-    """
+    """Return True if the entry has a valid score and name."""
     if not isinstance(item, dict):
         return False
     score = item.get("score")
@@ -28,24 +20,7 @@ def _is_valid_entry(item: Any) -> bool:
 def load_highscores(
         filepath: Union[str, Path] = "highscores.json"
         ) -> List[Dict[str, Any]]:
-    """Loads, validates, and sorts highscore entries from a JSON
-    file in descending order.
-
-    Reads the specified JSON file, filters out malformed or
-    invalid records, and returns the remaining valid highscores
-    sorted from highest to lowest score. If the file does not exist,
-    an empty list is returned. If the file is corrupted, it is automatically
-    deleted and an empty list is returned.
-
-    Args:
-        filepath: Path to the JSON highscores file.
-        Defaults to "highscores.json".
-
-    Returns:
-        List[Dict[str, Any]]: A list of validated highscore
-        dictionaries, each containing 'name' (str) and 'score'
-        (int), ordered by score descending.
-    """
+    """Load valid highscores sorted descending; purge corrupted files."""
     path = Path(filepath)
     if not path.is_file():
         return []
@@ -77,22 +52,7 @@ def save_highscore(
     filepath: Union[str, Path] = "highscores.json",
     max_entries: int = 10,
 ) -> None:
-    """Adds a new score, updates the scoreboard ranking,
-    and persists it to a JSON file.
-
-    Loads the current highscores, cleans up the provided player name,
-    appends the new entry, sorts all entries in descending order,
-    truncates the list to the top `max_entries`, and saves the result to disk.
-
-    Args:
-        name: The player's name. Whitespace is stripped,
-        defaulting to "AAA" if empty.
-        score: The numerical score achieved. Forced to be non-negative.
-        filepath: Target JSON file path where highscores are stored.
-        Defaults to "highscores.json".
-        max_entries: Maximum number of leaderboard records to preserve.
-        Defaults to 10.
-    """
+    """Insert a new entry, keep the top `max_entries`, and persist to JSON."""
     scores = load_highscores(filepath)
     clean_name = name.strip() or "AAA"
 

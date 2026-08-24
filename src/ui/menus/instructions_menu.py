@@ -5,16 +5,12 @@ from src.ui.menus.base_screen import BaseScreen
 
 
 class InstructionsMenu(BaseScreen):
-    """Manage the instructions screen."""
+    """Instructions screen showing controls, rules, and objectives."""
 
     def __init__(self, screen_width: int, screen_height: int):
         super().__init__(screen_width, screen_height)
 
-        self.title_font = (
-            pygame.font.SysFont("emulogic", 28)
-            if "emulogic" in pygame.font.get_fonts()
-            else pygame.font.SysFont("Arial", 32, bold=True)
-        )
+        self.title_font = self._load_arcade_font(28, 32)
         self.section_font = pygame.font.SysFont("Arial", 18, bold=True)
         self.label_font = pygame.font.SysFont("Arial", 15, bold=True)
         self.body_font = pygame.font.SysFont("Arial", 14)
@@ -28,7 +24,7 @@ class InstructionsMenu(BaseScreen):
     def _draw_card(self, surface: pygame.Surface,
                    rect: pygame.Rect, title: str) -> None:
         """Draw a container card with an integrated title."""
-        pygame.draw.rect(surface, (15, 15, 25), rect, border_radius=8)
+        pygame.draw.rect(surface, (18, 13, 36), rect, border_radius=8)
         pygame.draw.rect(surface, self.COLOR_BORDER, rect, width=2,
                          border_radius=8)
 
@@ -38,11 +34,11 @@ class InstructionsMenu(BaseScreen):
 
         bg_patch = pygame.Rect(title_rect.x, rect.top - 2,
                                title_rect.width, 4)
-        pygame.draw.rect(surface, (15, 15, 25), bg_patch)
+        pygame.draw.rect(surface, (18, 13, 36), bg_patch)
         surface.blit(title_surf, title_rect)
 
     def draw(self, surface: pygame.Surface) -> None:
-        """Render the instructions."""
+        """Render the instructions screen."""
         surface.fill(self.COLOR_BG)
 
         title_surf = self.title_font.render("HOW TO PLAY",
@@ -152,13 +148,13 @@ class InstructionsMenu(BaseScreen):
             start_y += 34
 
         goal_box = pygame.Rect(60, start_y + 8, rules_rect.width - 40, 36)
-        pygame.draw.rect(surface, (25, 25, 45), goal_box, border_radius=6)
+        pygame.draw.rect(surface, (25, 18, 45), goal_box, border_radius=6)
         pygame.draw.rect(
-            surface, (0, 255, 255),
+            surface, (0, 229, 255),
             goal_box, width=1, border_radius=6)
         goal_surf = self.section_font.render(
             "GOAL: Clear every level and achieve the highest score!",
-            True, (0, 255, 255))
+            True, (0, 229, 255))
         surface.blit(goal_surf, goal_surf.get_rect(center=goal_box.center))
 
         esc_x = (self.width // 2) - 120

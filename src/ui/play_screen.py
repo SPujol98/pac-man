@@ -14,27 +14,10 @@ from src.ui.renderer import Renderer
 
 
 class PlayScreen(BaseScreen):
-    """Manages the main active gameplay state, level lifecycle,
-    and game loop integration.
-
-    Acts as the primary coordinator for `GameState.PLAYING`.
-    It handles user input processing, game physics updates,
-    maze generation, level transitions, and delegate rendering
-    for entities (player, ghosts, collectibles) alongside the HUD.
-    """
+    """Coordinates gameplay: input, simulation, levels, and rendering."""
 
     def __init__(self, screen_width: int, screen_height: int,
                  config_or_data: Any = None) -> None:
-
-        """Initializes the playing screen, visual rendering engine,
-        and core game components.
-
-        Args:
-            screen_width: The display width in pixels.
-            screen_height: The display height in pixels.
-            config_or_data: Dictionary containing game
-                            configuration parameters parsed from JSON.
-        """
         super().__init__(screen_width, screen_height)
 
         self.config = (
@@ -53,15 +36,7 @@ class PlayScreen(BaseScreen):
         self.reset()
 
     def _parse_global_config(self) -> None:
-        """Extracts global gameplay parameters from the
-        configuration dictionary.
-
-        Populates instance attributes with fallback values
-        for player lives, pacgum counts,
-        scoring rules, time limits, generation seeds,
-        and stage dimensions.
-        """
-
+        """Extract gameplay parameters from the config, with defaults."""
         cfg = self.config
         self.default_lives = cfg.get("lives", 3)
         self.pacgum_quantity = cfg.get("pacgum", 42)
@@ -75,17 +50,7 @@ class PlayScreen(BaseScreen):
     def _load_level(self,
                     score: int = 0,
                     lives: Optional[int] = None) -> None:
-        """Generates the maze layout and instantiates the active
-        Level and Game objects. Determines grid dimensions and seeds
-        based on the level index, calls the maze loader, instantiates
-        `Level` and `Game`, and reconfigures the tile renderer scaling.
-
-        Args:
-            score: The player's accumulated score carried over to this level.
-            Defaults to 0.
-            lives: Remaining player lives carried over. Defaults to
-            `self.default_lives` if None.
-        """
+        """Generate the maze and instantiate the active Level and Game."""
 
         if self.level_configs:
             idx = min(self.current_level_index, len(self.level_configs) - 1)
@@ -124,8 +89,7 @@ class PlayScreen(BaseScreen):
         self._update_renderer_layout()
 
     def _update_renderer_layout(self) -> None:
-        """Recalculates tile dimensions and updates sprite assets
-        to fit the active grid layout."""
+        """Recalculate tile dimensions for the active grid layout."""
         grid = self.game.level.grid if self.game else []
         cols = len(grid[0]) if grid else 1
         rows = len(grid) if grid else 1
@@ -133,15 +97,7 @@ class PlayScreen(BaseScreen):
         self.renderer.load_sprites_for_tile_size(tile_size)
 
     def handle_event(self, event: pygame.event.Event) -> Optional[GameState]:
-        """Processes key presses, developer shortcuts,
-        and player direction inputs.
-
-        Args:
-            event: The Pygame event to evaluate.
-        Returns:
-            Optional[GameState]: `GameState.PAUSED` if pause requested,
-            otherwise `GameState.PLAYING`.
-        """
+        """Process pause keys, cheat shortcuts, and direction input."""
         if event.type == pygame.KEYDOWN and event.key in (
             pygame.K_p, pygame.K_ESCAPE
         ):
@@ -163,18 +119,12 @@ class PlayScreen(BaseScreen):
         return GameState.PLAYING
 
     def update(self) -> GameState:
-        """Advances the game physics simulation and evaluates level
-        completion or game over states. Calculates frame delta time,
-        updates internal game logic, and checks win/loss conditions.
-
-        Returns:
-            GameState: The active state (`PLAYING`, `GAME_OVER`, or `WIN`).
-        """
+        """Advance the simulation one frame and evaluate game-over/win."""
         if self.game is None:
             return GameState.PLAYING
 
         dt = min(self.clock.tick(60) / 1000.0, 0.1)
-        self.game._update(dt)
+        self.game.update(dt)
 
         if self.game.is_running:
             return GameState.PLAYING
@@ -188,13 +138,7 @@ class PlayScreen(BaseScreen):
         return GameState.PLAYING
 
     def _advance_to_next_level(self) -> GameState:
-        """Progresses the session to the next level while preserving
-        score and remaining lives.
-        Returns:
-            GameState: `GameState.PLAYING` if a new level is loaded,
-            or `GameState.WIN` if all levels in the progression
-            have been completed.
-        """
+        """Load the next level keeping score and lives, or declare victory."""
         if self.game_progression is None or self.game is None:
             return GameState.WIN
 
@@ -209,33 +153,20 @@ class PlayScreen(BaseScreen):
         return GameState.PLAYING
 
     def reset(self) -> None:
-        """Restores the screen state to Level 1 with a new progression
-        instance, score, and lives."""
+        """Restore the screen to Level 1 with fresh progression."""
         self.current_level_index = 0
         self.game_progression = GameProgression()
         self._load_level()
 
     def on_enter(self, previous_state: GameState) -> None:
-        """Lifecycle hook triggered when transitioning into this screen.
-
-        Resumes the frame clock if returning from pause,
-        or triggers a full reset if coming from menus or end-game screens.
-
-        Args:
-            previous_state: The application state prior to entering
-            `GameState.PLAYING`.
-        """
+        """Resume after pause, or start a fresh run from any other screen."""
         if previous_state == GameState.PAUSED:
             self.clock.tick()
         else:
             self.reset()
 
     def draw(self, surface: pygame.Surface) -> None:
-        """Renders all game elements, entities, background,
-        and HUD onto the target surface.
-        Args:
-            surface: The main Pygame display surface to draw on.
-        """
+        """Render maze, entities, and HUD onto the target surface."""
         surface.fill((0, 0, 0))
 
         if self.game is None:
@@ -253,7 +184,8 @@ class PlayScreen(BaseScreen):
         self.renderer.draw_player(surface, self.game.player, tile_size,
                                   off_x, off_y)
         self.renderer.draw_ghosts(surface, self.game.ghosts, tile_size,
-                                  off_x, off_y)
+                                  off_x, off_y,
+                                  self.game.frightened_timer)
 
         self.hud.draw(
             surface=surface,
