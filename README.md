@@ -247,5 +247,3 @@ Four phases, each ending with an integration checkpoint: contract & skeleton →
 | [**SabriSanchez**](https://github.com/SabriSanchez) | UI, Systems & Integration | `ui/` + `systems/` + `level_manager/` — screen framework and menus, renderer and HUD, self-healing config parser, highscore persistence, A-Maze-ing loader |
 
 The entity contract in `states.py` was fixed on day one — after that, both halves were built in parallel without ever touching each other's code.
-
-**AI usage** — as a Socratic mentor for architectural decisions and OOP concepts, and to help polish this documentation. All code was written, reviewed, tested, and is fully understood by the authors.
