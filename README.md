@@ -248,13 +248,4 @@ Four phases, each ending with an integration checkpoint: contract & skeleton →
 
 The entity contract in `states.py` was fixed on day one — after that, both halves were built in parallel without ever touching each other's code.
 
----
-
-## Resources
-
-- [Pygame documentation](https://www.pygame.org/docs/)
-- [Understanding Pac-Man ghost behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
-- [Fix Your Timestep! — Gaffer On Games](https://gafferongames.com/post/fix_your_timestep/)
-- [Game Programming Patterns — State](https://gameprogrammingpatterns.com/state.html)
-
 **AI usage** — as a Socratic mentor for architectural decisions and OOP concepts, and to help polish this documentation. All code was written, reviewed, tested, and is fully understood by the authors.
