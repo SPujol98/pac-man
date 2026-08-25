@@ -236,18 +236,3 @@ pacman/
 Work was split by ownership rather than tickets: one programmer owned the simulation (`core/`, `entities/`), the other owned UI and data (`ui/`, `systems/`, `level_manager/`). The entity contract in `states.py` was written before anything else specifically so both halves could be built in parallel without merge conflicts on shared logic.
 
 Four phases, each ending with an integration checkpoint: contract & skeleton → vertical slice (player moving on a real maze) → playable core (ghosts, collisions, rendering) → systems & polish (menus, highscores, packaging). Timeline, risk analysis, and team organization notes live in [`project_management/`](project_management/).
-
----
-
-## Resources
-
-### References
-
-- [Pygame documentation](https://www.pygame.org/docs/)
-- [Understanding Pac-Man ghost behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
-- [Fix Your Timestep! — Gaffer On Games](https://gafferongames.com/post/fix_your_timestep/)
-- [Game Programming Patterns — State](https://gameprogrammingpatterns.com/state.html)
-
-### AI usage
-
-AI was used as a Socratic mentor to validate architectural decisions, for SOLID-oriented refactoring feedback (behavior verified unchanged against a deterministic simulation baseline), and to help structure this documentation. All final code and design decisions were reviewed, tested, and are fully understood by the authors.
