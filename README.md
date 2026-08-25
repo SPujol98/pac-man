@@ -1,5 +1,3 @@
-*This project has been created as part of the 42 curriculum by spujol-s, sasanche.*
-
 # Pac-Man 42
 
 A from-scratch Pac-Man clone where every ghost hunts you differently, mazes are never the same twice, and nothing — not a corrupted config, not a hand-edited highscore file — can crash the game.
