@@ -236,3 +236,25 @@ pacman/
 Work was split by ownership rather than tickets: one programmer owned the simulation (`core/`, `entities/`), the other owned UI and data (`ui/`, `systems/`, `level_manager/`). The entity contract in `states.py` was written before anything else specifically so both halves could be built in parallel without merge conflicts on shared logic.
 
 Four phases, each ending with an integration checkpoint: contract & skeleton → vertical slice (player moving on a real maze) → playable core (ghosts, collisions, rendering) → systems & polish (menus, highscores, packaging). Timeline, risk analysis, and team organization notes live in [`project_management/`](project_management/).
+
+---
+
+## Authors
+
+| | Role | Focus |
+|:---|:---|:---|
+| [**SPujol98**](https://github.com/SPujol98) | Simulation & Engine | `core/` + `entities/` — game loop, hybrid grid/pixel movement, the ghost FSM and its four personalities, collisions, level generation and progression |
+| [**SabriSanchez**](https://github.com/SabriSanchez) | UI, Systems & Integration | `ui/` + `systems/` + `level_manager/` — screen framework and menus, renderer and HUD, self-healing config parser, highscore persistence, A-Maze-ing loader |
+
+The entity contract in `states.py` was fixed on day one — after that, both halves were built in parallel without ever touching each other's code.
+
+---
+
+## Resources
+
+- [Pygame documentation](https://www.pygame.org/docs/)
+- [Understanding Pac-Man ghost behavior](https://gameinternals.com/understanding-pac-man-ghost-behavior)
+- [Fix Your Timestep! — Gaffer On Games](https://gafferongames.com/post/fix_your_timestep/)
+- [Game Programming Patterns — State](https://gameprogrammingpatterns.com/state.html)
+
+**AI usage** — as a Socratic mentor for architectural decisions and OOP concepts, and to help polish this documentation. All code was written, reviewed, tested, and is fully understood by the authors.
